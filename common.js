@@ -20,7 +20,9 @@ const DEFAULT_CONFIG = {
   quoteFile: '',
   quoteFileName: '',
   maskColor: '#000000',
-  maskOpacity: 60
+  maskOpacity: 60,
+  tabName: 'Orbit',
+  asciiSpeed: 50
 };
 
 const DEFAULT_BOOKMARKS = [
@@ -76,6 +78,12 @@ function applySharedTheme(config, pageType) {
 
   document.body.style.backgroundColor = config.backgroundColor;
   document.body.style.color = config.textColor;
+
+  if (config.tabName) {
+    document.title = config.tabName;
+  } else {
+    document.title = 'Orbit';
+  }
 
   let bgStyleEl = document.getElementById('background-style');
   let bgMaskEl = document.getElementById('background-mask');

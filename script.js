@@ -65,7 +65,11 @@ const Animations = {
         return false;
       }
       let angle = 0;
-      (function render() {
+      let lastTime = 0;
+      (function render(now) {
+        // speed scaling: 50 is default speed
+        const speedRatio = (config.asciiSpeed !== undefined ? config.asciiSpeed : 50) / 50;
+
         let out = '';
         for (let j = 0; j < height; j++) {
           for (let i = 0; i < width; i++) {
@@ -87,7 +91,11 @@ const Animations = {
           out += '\n';
         }
         el.textContent = out;
-        angle += 0.003;
+
+        const delta = now - lastTime || 16.66;
+        lastTime = now;
+        angle += 0.003 * speedRatio * (delta / 16.66);
+
         activeAnimationFrame = requestAnimationFrame(render);
       })();
     },
@@ -102,12 +110,18 @@ const Animations = {
         trail: 6 + Math.floor(Math.random() * 12)
       }));
       const grid = Array.from({ length: rows }, () => Array(cols).fill(' '));
-      (function render() {
+      let lastTime = 0;
+      (function render(now) {
+        const speedRatio = (config.asciiSpeed !== undefined ? config.asciiSpeed : 50) / 50;
+        const delta = now - lastTime || 16.66;
+        lastTime = now;
+        const timeScale = speedRatio * (delta / 16.66);
+
         for (let r = 0; r < rows; r++)
           for (let c = 0; c < cols; c++) grid[r][c] = ' ';
         for (let c = 0; c < cols; c++) {
           const d = drops[c];
-          d.y += d.speed;
+          d.y += d.speed * timeScale;
           if (d.y - d.trail > rows) {
             d.y = Math.random() * rows * -1;
             d.speed = 0.15 + Math.random() * 0.35;
@@ -131,10 +145,16 @@ const Animations = {
         x: Math.random() * cols, y: Math.random() * rows,
         vx: (Math.random() - 0.5) * 0.04, vy: (Math.random() - 0.5) * 0.02
       }));
-      (function render() {
+      let lastTime = 0;
+      (function render(now) {
+        const speedRatio = (config.asciiSpeed !== undefined ? config.asciiSpeed : 50) / 50;
+        const delta = now - lastTime || 16.66;
+        lastTime = now;
+        const timeScale = speedRatio * (delta / 16.66);
+
         const grid = Array.from({ length: rows }, () => Array(cols).fill(' '));
         for (const s of stars) {
-          s.x += s.vx; s.y += s.vy;
+          s.x += s.vx * timeScale; s.y += s.vy * timeScale;
           if (s.x < 0) s.x += cols; if (s.x >= cols) s.x -= cols;
           if (s.y < 0) s.y += rows; if (s.y >= rows) s.y -= rows;
         }
@@ -170,11 +190,19 @@ const Animations = {
         vx: (Math.random() - 0.5) * 0.03, vy: -0.01 - Math.random() * 0.03,
         char: '·.˙°*∘'[Math.floor(Math.random() * 6)]
       }));
-      (function render() {
+      let lastTime = 0;
+      let totalTime = 0;
+      (function render(now) {
+        const speedRatio = (config.asciiSpeed !== undefined ? config.asciiSpeed : 50) / 50;
+        const delta = now - lastTime || 16.66;
+        lastTime = now;
+        const timeScale = speedRatio * (delta / 16.66);
+        totalTime += timeScale;
+
         const grid = Array.from({ length: rows }, () => Array(cols).fill(' '));
         for (const p of pts) {
-          p.x += p.vx + Math.sin(p.y * 0.3) * 0.01;
-          p.y += p.vy;
+          p.x += (p.vx + Math.sin(p.y * 0.3 + (totalTime * 0.05)) * 0.01) * timeScale;
+          p.y += p.vy * timeScale;
           if (p.y < 0) { p.y = rows - 1; p.x = Math.random() * cols; }
           if (p.x < 0) p.x += cols; if (p.x >= cols) p.x -= cols;
           const px = Math.round(p.x), py = Math.round(p.y);
@@ -801,6 +829,10 @@ async function init() {
   applyConfig();
   updateGreeting();
   initQuotes();
+  setTimeout(() => {
+    searchInput.focus();
+    updateSmoothCaret();
+  }, 100);
 }
 
 init();

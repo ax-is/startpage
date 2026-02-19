@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bookmarks — Startpage</title>
+  <title>Bookmarks — Orbit</title>
   <link rel="stylesheet" href="style.css?v=4">
 </head>
 
@@ -43,7 +43,7 @@
 
     function handleDragStart(e) {
       draggedIndex = parseInt(e.currentTarget.dataset.index);
-      e.currentTarget.classList.add('dragging');
+      setTimeout(() => e.target.classList.add('dragging'), 0);
       e.dataTransfer.effectAllowed = 'move';
     }
 
