@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookmarks — Startpage</title>
+  <link rel="stylesheet" href="style.css?v=4">
+</head>
+
+<body class="auto-scroll">
+  <div class="page-container">
+    <a href="index.html" class="back-link">← back to startpage</a>
+    <h1>Edit Bookmarks</h1>
+
+    <div class="bookmark-list" id="bookmarkList"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'startpageBookmarks';
+    let bookmarks = [];
+
+    const defaultBookmarks = [
+      { "name": "GitHub", "url": "https://github.com", "tags": ["dev", "code"] },
+      { "name": "Google", "url": "https://google.com", "tags": ["search"] },
+      { "name": "YouTube", "url": "https://youtube.com", "tags": ["video", "entertainment"] },
+      { "name": "Reddit", "url": "https://reddit.com", "tags": ["social"] }
+    ];
+
+    async function loadBookmarks() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        bookmarks = JSON.parse(saved);
+      } else {
+        try {
+          const response = await fetch('data.json');
+          const data = await response.json();
+          bookmarks = data.bookmarks || defaultBookmarks;
+        } catch (error) {
+          console.error('Failed to load data.json:', error);
+          bookmarks = defaultBookmarks;
+        }
+      }
+      renderBookmarks();
+    }
+
+    // --- Load config for theming ---
+    // --- Theme Application ---
+    function getOrCreateStyleElement(id) {
+      let element = document.getElementById(id);
+      if (!element) {
+        element = document.createElement('style');
+        element.id = id;
+        document.head.appendChild(element);
+      }
+      return element;
+    }
+
+    function removeElementById(id) {
+      const element = document.getElementById(id);
+      if (element) element.remove();
+    }
+
+    function applyBackgroundImage(backgroundImage, backgroundBlur) {
+      const blur = backgroundBlur || 0;
+      const filterValue = blur > 0 ? `blur(${blur}px)` : 'none';
+
+      const bgStyle = getOrCreateStyleElement('background-style');
+      bgStyle.textContent = `
+        body::before {
+          content: '';
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          background-image: url('${backgroundImage}');
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          filter: ${filterValue};
+          z-index: -2;
+        }
+      `;
+      document.body.style.backgroundImage = 'none';
+    }
+
+    function applyMask(maskColor, maskOpacity) {
+      removeElementById('background-mask');
+      const opacity = (maskOpacity || 60) / 100;
+      if (opacity > 0) {
+        const mask = document.createElement('div');
+        mask.id = 'background-mask';
+        Object.assign(mask.style, {
+          position: 'fixed', top: '0', left: '0',
+          width: '100%', height: '100%',
+          backgroundColor: maskColor || '#000000',
+          opacity: opacity.toString(),
+          zIndex: '-1', pointerEvents: 'none'
+        });
+        document.body.appendChild(mask);
+      }
+    }
+
+    function applyTheme(config) {
+      const root = document.documentElement;
+      const bg = config.backgroundColor || '#0a0a0f';
+      const fg = config.textColor || '#e0e0e0';
+      const accent = config.accentColor || '#4a9eff';
+
+      root.style.setProperty('--color-bg', bg);
+      root.style.setProperty('--color-fg', fg);
+      root.style.setProperty('--color-accent', accent);
+
+      document.body.style.backgroundColor = bg;
+      document.body.style.color = fg;
+
+      const bgImg = config.backgroundImage;
+      if (bgImg) {
+        applyBackgroundImage(bgImg, config.backgroundBlur);
+        applyMask(config.maskColor, config.maskOpacity);
+      } else {
+        removeElementById('background-style');
+        removeElementById('background-mask');
+      }
+    }
+
+    async function loadConfig() {
+      const saved = localStorage.getItem('startpageConfig');
+      if (saved) {
+        applyTheme(JSON.parse(saved));
+      } else {
+        // Try loading from data.json if not in local storage
+        try {
+          const response = await fetch('data.json');
+          const data = await response.json();
+          if (data.config) applyTheme(data.config);
+        } catch (e) {
+          console.error('Failed to load default config', e);
+        }
+      }
+    }
+
+    let draggedIndex = null;
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function clearDragOverClass() {
+      document.querySelectorAll('.bookmark-edit-item').forEach(item => {
+        item.classList.remove('drag-over');
+      });
+    }
+
+    function handleDragStart(e) {
+      draggedIndex = parseInt(e.currentTarget.dataset.index);
+      e.currentTarget.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      clearDragOverClass();
+      e.currentTarget.classList.add('drag-over');
+      return false;
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      clearDragOverClass();
+
+      const dropIndex = parseInt(e.currentTarget.dataset.index);
+      if (draggedIndex !== null && draggedIndex !== dropIndex) {
+        const [draggedItem] = bookmarks.splice(draggedIndex, 1);
+        bookmarks.splice(dropIndex, 0, draggedItem);
+        saveBookmarks();
+        renderBookmarks();
+      }
+      return false;
+    }
+
+    function handleDragEnd(e) {
+      e.currentTarget.classList.remove('dragging');
+      clearDragOverClass();
+      draggedIndex = null;
+    }
+
+
+
+    function attachDragHandlers(item) {
+      item.addEventListener('dragstart', handleDragStart);
+      item.addEventListener('dragover', handleDragOver);
+      item.addEventListener('drop', handleDrop);
+      item.addEventListener('dragend', handleDragEnd);
+    }
+
+    function createBookmarkItem(bookmark, index) {
+      const item = document.createElement('div');
+      item.className = 'bookmark-edit-item';
+      item.draggable = true;
+      item.dataset.index = index;
+      item.innerHTML = `
+        <div class="drag-handle">≡</div>
+        <div class="bookmark-card">
+          <div class="bookmark-fields">
+            <span class="bookmark-num" style="color: var(--color-muted); font-size: 0.8rem; margin-right: 8px; min-width: 20px;">${index + 1}.</span>
+            <input type="text" class="bookmark-name" value="${escapeHtml(bookmark.name)}" placeholder="Name" data-index="${index}">
+            <input type="text" class="bookmark-url" value="${escapeHtml(bookmark.url)}" placeholder="https://url..." data-index="${index}">
+            <input type="text" class="bookmark-tags" value="${escapeHtml(bookmark.tags.join(', '))}" placeholder="tags" data-index="${index}">
+          </div>
+          <button class="delete-btn" data-index="${index}" title="delete">×</button>
+        </div>
+      `;
+      attachDragHandlers(item);
+      return item;
+    }
+
+    function handleInputChange() {
+      validateBookmarks();
+      autoSaveBookmarks();
+    }
+
+    function renderBookmarks() {
+      const container = document.getElementById('bookmarkList');
+      container.innerHTML = '';
+
+      bookmarks.forEach((bookmark, index) => {
+        container.appendChild(createBookmarkItem(bookmark, index));
+      });
+
+      // Add "Add New" button at the bottom
+      const addContainer = document.createElement('div');
+      addContainer.className = 'add-btn-container';
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '+ add new bookmark';
+      addBtn.onclick = () => addBookmarkAt(bookmarks.length);
+      addContainer.appendChild(addBtn);
+      container.appendChild(addContainer);
+
+      document.querySelectorAll('.bookmark-name, .bookmark-url').forEach(input => {
+        input.addEventListener('input', handleInputChange);
+        input.addEventListener('focus', function () {
+          this.select();
+        });
+      });
+
+      document.querySelectorAll('.bookmark-tags').forEach(input => {
+        input.addEventListener('input', handleInputChange);
+        input.addEventListener('focus', function () {
+          this.select();
+        });
+        input.addEventListener('blur', (e) => {
+          const normalized = normalizeTagsFormat(e.target.value);
+          if (e.target.value !== normalized) {
+            e.target.value = normalized;
+            handleInputChange();
+          }
+        });
+      });
+
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          deleteBookmark(parseInt(e.target.dataset.index));
+        });
+      });
+
+      validateBookmarks();
+    }
+
+    function saveBookmarks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+    }
+
+    function createNewBookmark() {
+      return { name: '', url: '', tags: [] };
+    }
+
+    function addBookmarkAt(position) {
+      bookmarks.splice(position, 0, createNewBookmark());
+      saveBookmarks();
+      renderBookmarks();
+    }
+
+    function deleteBookmark(index) {
+      if (confirm('Delete this bookmark?')) {
+        bookmarks.splice(index, 1);
+        saveBookmarks();
+        renderBookmarks();
+      }
+    }
+
+    function parseTags(tagsString) {
+      return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
+    }
+
+    function autoSaveBookmarks() {
+      const nameInputs = document.querySelectorAll('.bookmark-name');
+      const urlInputs = document.querySelectorAll('.bookmark-url');
+      const tagsInputs = document.querySelectorAll('.bookmark-tags');
+
+      bookmarks = Array.from(nameInputs).map((nameInput, index) => ({
+        name: nameInput.value,
+        url: urlInputs[index].value,
+        tags: parseTags(tagsInputs[index].value)
+      }));
+
+      saveBookmarks();
+    }
+
+    function isValidUrl(url) {
+      if (!url) return false;
+      try {
+        new URL(url);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function toggleError(input, hasError) {
+      input.classList.toggle('error', hasError);
+    }
+
+    function validateBookmarks() {
+      document.querySelectorAll('.bookmark-name').forEach(input => {
+        toggleError(input, input.value.trim() === '');
+      });
+
+      document.querySelectorAll('.bookmark-url').forEach(input => {
+        const url = input.value.trim();
+        toggleError(input, url === '' || !isValidUrl(url));
+      });
+
+      document.querySelectorAll('.bookmark-tags').forEach(input => {
+        const hasInvalidFormat = input.value && /,(?!\s|$)/.test(input.value);
+        toggleError(input, hasInvalidFormat);
+      });
+    }
+
+    function normalizeTagsFormat(tagsString) {
+      if (!tagsString) return '';
+      return tagsString.replace(/,\s*/g, ', ').replace(/,\s*$/, '');
+    }
+
+    loadConfig();
+    loadBookmarks();
+  </script>
+</body>
+
+</html>

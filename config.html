@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Startpage</title>
+  <link rel="stylesheet" href="style.css?v=4">
+  <style>
+    html,
+    body {
+      overflow: auto;
+    }
+
+    .cfg {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 24px 20px;
+      font-family: var(--font-mono);
+    }
+
+    .cfg h1 {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      color: var(--color-fg);
+      letter-spacing: 0.5px;
+    }
+
+    .cfg a.back {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: var(--color-muted, #555);
+      text-decoration: none;
+      margin-bottom: 12px;
+      transition: color 0.2s;
+    }
+
+    .cfg a.back:hover {
+      color: var(--color-fg);
+    }
+
+    .section {
+      border: 1px solid var(--color-border, #1e1e2e);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      background: var(--color-panel, rgba(255, 255, 255, 0.02));
+    }
+
+    .section-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--color-muted, #555);
+      margin-bottom: 10px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .row:last-child {
+      margin-bottom: 0;
+    }
+
+    .row label {
+      font-size: 0.78rem;
+      color: var(--color-fg, #e0e0e0);
+      flex-shrink: 0;
+    }
+
+    .row input[type="color"] {
+      width: 40px;
+      height: 24px;
+      border: 1px solid var(--color-border, #1e1e2e);
+      border-radius: 4px;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .row input[type="text"] {
+      flex: 1;
+      margin-left: 12px;
+      padding: 5px 8px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
+      border: 1px solid var(--color-border, #1e1e2e);
+      border-radius: 4px;
+      color: var(--color-fg);
+      outline: none;
+      min-width: 0;
+    }
+
+    .row input[type="text"]:focus {
+      border-color: var(--color-accent, #4a9eff);
+    }
+
+    .row select {
+      flex: 1;
+      margin-left: 12px;
+      padding: 5px 8px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
+      border: 1px solid var(--color-border, #1e1e2e);
+      border-radius: 4px;
+      color: var(--color-fg);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .row select option {
+      background: var(--color-bg, #0a0e1a);
+      color: var(--color-fg, #e0e0e0);
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .slider-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .slider-row label {
+      font-size: 0.78rem;
+      color: var(--color-fg);
+      white-space: nowrap;
+      min-width: 100px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      margin-left: 12px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .btn-row button {
+      flex: 1;
+      padding: 9px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      border-radius: 5px;
+      border: 1px solid var(--color-border, #1e1e2e);
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
+      color: var(--color-fg, #e0e0e0);
+    }
+
+    .btn-row .save {
+      background: var(--color-accent, #4a9eff);
+      border-color: var(--color-accent, #4a9eff);
+      color: #000;
+      font-weight: 600;
+    }
+
+    .btn-row .save:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 0 12px rgba(74, 158, 255, 0.3);
+    }
+
+    .btn-row .reset:hover {
+      border-color: #ff4a4a;
+      color: #ff4a4a;
+    }
+
+    .status {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 0.72rem;
+      color: var(--color-accent, #4a9eff);
+      min-height: 1em;
+      transition: opacity 0.3s;
+    }
+
+    .pick-btn {
+      margin-left: 6px;
+      padding: 5px 10px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
+      border: 1px solid var(--color-border, #1e1e2e);
+      border-radius: 4px;
+      color: var(--color-fg, #e0e0e0);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .pick-btn:hover {
+      border-color: var(--color-accent, #4a9eff);
+      color: var(--color-accent, #4a9eff);
+    }
+  </style>
+</head>
+
+<body class="auto-scroll">
+  <div class="cfg">
+    <a href="index.html" class="back">← back</a>
+    <h1>settings</h1>
+
+    <!-- Colors -->
+    <div class="section">
+      <div class="section-title">colors</div>
+      <div class="row">
+        <label>background</label>
+        <input type="color" id="backgroundColor" value="#0a0e1a">
+      </div>
+      <div class="row">
+        <label>text</label>
+        <input type="color" id="textColor" value="#e0e0e0">
+      </div>
+      <div class="row">
+        <label>text 2</label>
+        <input type="color" id="textColor2" value="#e0e0e0">
+      </div>
+      <div class="row">
+        <label>accent</label>
+        <input type="color" id="accentColor" value="#4a9eff">
+      </div>
+    </div>
+
+    <!-- ASCII -->
+    <div class="section">
+      <div class="section-title">ascii</div>
+      <div class="row">
+        <label>animation</label>
+        <select id="bgAnimation">
+          <option value="globe">🌍 globe</option>
+          <option value="matrix">🟢 matrix</option>
+          <option value="constellation">✨ constellation</option>
+          <option value="particles">🫧 particles</option>
+          <option value="none">⛔ none</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>color</label>
+        <input type="color" id="asciiColor" value="#4a9eff">
+      </div>
+      <div class="slider-row">
+        <label>opacity: <span id="opacityValue">40</span>%</label>
+        <input type="range" id="asciiOpacity" value="40" min="0" max="100" step="1">
+      </div>
+    </div>
+
+    <!-- Background -->
+    <div class="section">
+      <div class="section-title">background</div>
+      <div class="row" style="align-items: center;">
+        <label>image</label>
+        <input type="text" id="backgroundImage" placeholder="url or pick file" value="" style="flex:1;">
+        <button type="button" class="pick-btn" id="pickImageBtn" style="margin-left: 8px;">📁 pick</button>
+        <button type="button" class="clear-btn" id="clearImageBtn" title="remove image"
+          style="margin-left: 8px; background: none; border: none; color: var(--color-fg); opacity: 0.6; cursor: pointer;">✕</button>
+        <input type="file" id="imageFilePicker" accept="image/*" style="display:none">
+      </div>
+      <div class="slider-row">
+        <label>blur: <span id="blurValue">0</span>px</label>
+        <input type="range" id="backgroundBlur" value="0" min="0" max="20" step="1">
+      </div>
+    </div>
+
+    <!-- Greeting -->
+    <div class="section">
+      <div class="section-title">greeting</div>
+      <div class="row">
+        <label>name</label>
+        <input type="text" id="userName" placeholder="your name" value="axis">
+      </div>
+      <div class="row" style="align-items: center;">
+        <label>custom quotes</label>
+        <input type="text" id="quoteFileNameInput" placeholder="no file selected" readonly
+          style="flex:1; color: var(--color-fg); opacity: 0.7; cursor: default; background: rgba(255,255,255,0.04); border: 1px solid var(--color-border); padding: 4px 8px; border-radius: 4px;">
+        <button type="button" class="pick-btn" id="pickQuoteBtn" style="margin-left: 8px;">📁 pick .txt</button>
+        <button type="button" class="clear-btn" id="clearQuoteBtn" title="remove quotes"
+          style="margin-left: 8px; background: none; border: none; color: var(--color-fg); opacity: 0.6; cursor: pointer;">✕</button>
+        <input type="file" id="quoteFilePicker" accept=".txt" style="display:none">
+      </div>
+      <div class="row">
+        <label>quote timer</label>
+        <div style="flex: 1; display: flex; gap: 8px; align-items: center; min-width: 0;">
+          <select id="quoteIntervalSelect" style="flex: 1;">
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+            <option value="60">60 min</option>
+            <option value="custom">custom</option>
+          </select>
+          <input type="number" id="quoteIntervalCustom" placeholder="min" style="width: 50px; display: none;" min="1">
+        </div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="section">
+      <div class="section-title">search</div>
+      <div class="row">
+        <label>engine</label>
+        <input type="text" id="searchEngine" value="https://www.google.com/search?q=" placeholder="https://...?q=">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="save" id="saveBtn">💾 save</button>
+      <button class="reset" id="resetBtn">↺ reset</button>
+    </div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'startpageConfig';
+
+    const DEFAULT_CONFIG = {
+      backgroundColor: '#0a0e1a',
+      textColor: '#e0e0e0',
+      accentColor: '#4a9eff',
+      searchEngine: 'https://www.google.com/search?q=',
+      backgroundImage: '',
+      backgroundBlur: 0,
+      bgAnimation: 'globe',
+      asciiColor: '#4a9eff',
+      asciiOpacity: 12,
+      userName: 'axis',
+      customGreeting: '',
+      textColor2: '#cccccc',
+      quoteInterval: 30,
+      quoteFile: '',
+      quoteFileName: ''
+    };
+
+    const CONFIG_FIELDS = [
+      'backgroundColor',
+      'textColor',
+      'textColor2',
+      'accentColor',
+      'searchEngine',
+      'backgroundImage',
+      'backgroundBlur',
+      'bgAnimation',
+      'asciiColor',
+      'asciiOpacity',
+      'userName',
+      'customGreeting',
+      'quoteInterval',
+      'quoteFile',
+      'quoteFileName'
+    ];
+
+    function getConfigFromInputs() {
+      const config = CONFIG_FIELDS.reduce((acc, field) => {
+        const el = document.getElementById(field);
+        if (el) acc[field] = el.value;
+        return acc;
+      }, {});
+
+      // Handle quote interval
+      const select = document.getElementById('quoteIntervalSelect');
+      const custom = document.getElementById('quoteIntervalCustom');
+      if (select.value === 'custom') {
+        config.quoteInterval = custom.value || 30;
+      } else {
+        config.quoteInterval = select.value;
+      }
+      return config;
+    }
+
+    function updateSliderValue(sliderId, valueId) {
+      const slider = document.getElementById(sliderId);
+      const valueDisplay = document.getElementById(valueId);
+      if (slider && valueDisplay) valueDisplay.textContent = slider.value;
+    }
+
+    function setInputsFromConfig(config) {
+      CONFIG_FIELDS.forEach(field => {
+        const el = document.getElementById(field);
+        if (el && config[field] !== undefined) el.value = config[field] || '';
+      });
+
+      // Handle quote interval inputs
+      const interval = config.quoteInterval || 30;
+      const select = document.getElementById('quoteIntervalSelect');
+      const custom = document.getElementById('quoteIntervalCustom');
+
+      if (['15', '30', '60'].includes(String(interval))) {
+        select.value = interval;
+        custom.style.display = 'none';
+      } else {
+        select.value = 'custom';
+        custom.value = interval;
+        custom.style.display = 'block';
+      }
+
+      // Update quote file name display
+      const quoteFileNameSpan = document.getElementById('quoteFileName');
+      if (quoteFileNameSpan && config.quoteFileName) {
+        quoteFileNameSpan.textContent = config.quoteFileName;
+      }
+
+      updateSliderValue('backgroundBlur', 'blurValue');
+      updateSliderValue('asciiOpacity', 'opacityValue');
+    }
+
+    async function loadSettings() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const config = JSON.parse(saved);
+        setInputsFromConfig(config);
+
+        if (config.quoteFile && config.quoteFile.length > 0) {
+          document.getElementById('pickQuoteBtn').innerText = '✅ loaded';
+        }
+        applyTheme(config);
+      } else {
+        try {
+          const response = await fetch('data.json');
+          const data = await response.json();
+          const config = data.config || DEFAULT_CONFIG;
+          setInputsFromConfig(config);
+          applyTheme(config);
+        } catch (error) {
+          console.error('Failed to load data.json:', error);
+          setInputsFromConfig(DEFAULT_CONFIG);
+          applyTheme(DEFAULT_CONFIG);
+        }
+      }
+    }
+
+    function applyTheme(config) {
+      const root = document.documentElement;
+      root.style.setProperty('--color-bg', config.backgroundColor);
+      root.style.setProperty('--color-fg', config.textColor);
+      root.style.setProperty('--color-accent', config.accentColor);
+
+      document.body.style.backgroundColor = config.backgroundColor;
+      document.body.style.color = config.textColor;
+
+      // Ensure background image is NOT applied on config page
+      document.body.style.backgroundImage = 'none';
+      removeElementById('background-style');
+      removeElementById('background-mask');
+    }
+
+    function removeElementById(id) {
+      const element = document.getElementById(id);
+      if (element) element.remove();
+    }
+
+    function applyBackgroundImage(backgroundImage, backgroundBlur) {
+      const blur = backgroundBlur || 0;
+      const filterValue = blur > 0 ? `blur(${blur}px)` : 'none';
+
+      const bgStyle = document.createElement('style');
+      bgStyle.id = 'background-style';
+      bgStyle.textContent = `
+        body::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-image: url('${backgroundImage}');
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          filter: ${filterValue};
+          z-index: -2;
+        }
+      `;
+      document.head.appendChild(bgStyle);
+      document.body.style.backgroundImage = 'none';
+    }
+
+    function showStatus(msg) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.opacity = '0'; }, 2500);
+    }
+
+    function saveSettings() {
+      const config = getConfigFromInputs();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      applyTheme(config);
+      showStatus('settings saved ✓');
+    }
+
+    function resetSettings() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_CONFIG));
+      setInputsFromConfig(DEFAULT_CONFIG);
+      applyTheme(DEFAULT_CONFIG);
+      showStatus('reset successful ↺');
+    }
+
+    CONFIG_FIELDS.forEach(field => {
+      const element = document.getElementById(field);
+      if (!element) return;
+      element.addEventListener('input', () => {
+        const config = getConfigFromInputs();
+        applyTheme(config);
+      });
+      if (element.type === 'text') {
+        element.addEventListener('focus', function () { this.select(); });
+      }
+    });
+
+    document.getElementById('backgroundBlur').addEventListener('input', () => updateSliderValue('backgroundBlur', 'blurValue'));
+    document.getElementById('asciiOpacity').addEventListener('input', () => updateSliderValue('asciiOpacity', 'opacityValue'));
+    document.getElementById('saveBtn').addEventListener('click', saveSettings);
+    document.getElementById('resetBtn').addEventListener('click', resetSettings);
+
+    // Image file picker
+    document.getElementById('pickImageBtn').addEventListener('click', () => {
+      document.getElementById('imageFilePicker').click();
+    });
+    document.getElementById('imageFilePicker').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        document.getElementById('backgroundImage').value = evt.target.result;
+        const config = getConfigFromInputs();
+        applyTheme(config);
+        showStatus('image loaded ✓');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Quote file picker
+    document.getElementById('pickQuoteBtn').addEventListener('click', () => {
+      document.getElementById('quoteFilePicker').click();
+    });
+
+    document.getElementById('quoteFilePicker').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        // Store the raw text content directly
+        const textContent = e.target.result;
+
+        if (textContent.length > 500000) {
+          alert('File matches too large for local storage! Please use a smaller file (< 500KB).');
+          return;
+        }
+
+        // Create hidden input for content
+        let hidden = document.getElementById('quoteFile');
+        if (!hidden) {
+          hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.id = 'quoteFile';
+          document.body.appendChild(hidden);
+        }
+        hidden.value = textContent;
+
+        // Store filename for display
+        let hiddenName = document.getElementById('quoteFileNameInput');
+        if (!hiddenName) {
+          hiddenName = document.createElement('input');
+          hiddenName.type = 'hidden';
+          hiddenName.id = 'quoteFileNameInput'; // distinct ID
+          document.body.appendChild(hiddenName);
+        }
+        hiddenName.value = file.name;
+
+        document.getElementById('pickQuoteBtn').innerText = '✅ loaded';
+        document.getElementById('quoteFileName').textContent = file.name;
+
+        // Auto-save to ensure it persists
+        saveSettings();
+      };
+      reader.readAsText(file); // Read as text, not DataURL
+    });
+
+    // Quote interval handler
+    document.getElementById('quoteIntervalSelect').addEventListener('change', (e) => {
+      const custom = document.getElementById('quoteIntervalCustom');
+      if (e.target.value === 'custom') {
+        custom.style.display = 'block';
+        custom.focus();
+      } else {
+        custom.style.display = 'none';
+      }
+    });
+
+    // Clear Image Handler
+    document.getElementById('clearImageBtn').addEventListener('click', () => {
+      document.getElementById('backgroundImage').value = '';
+      document.getElementById('imgPreview').src = '';
+      saveSettings();
+    });
+
+    // Clear Quote Handler
+    document.getElementById('clearQuoteBtn').addEventListener('click', () => {
+      document.getElementById('quoteFileNameInput').value = '';
+      document.getElementById('quoteFile').value = '';
+      document.getElementById('quoteFileName').textContent = ''; // Clear legacy span if exists
+      saveSettings();
+    });
+
+    loadSettings();
+  </script>
+</body>
+
+</html>

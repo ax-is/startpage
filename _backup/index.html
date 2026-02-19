@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>~ startpage</title>
+  <link rel="stylesheet" href="style.css?v=4">
+</head>
+
+<body>
+  <!-- Rotating ASCII Globe Background -->
+  <pre id="globe" aria-hidden="true"></pre>
+
+  <!-- Main Content -->
+  <div class="center-stage">
+
+    <div class="greeting-area">
+      <span id="greeting">good evening,</span>
+      <span id="username">axis</span>
+    </div>
+
+    <div class="search-wrapper">
+      <div class="search-area">
+        <input type="text" id="search-input" autocomplete="off" autofocus spellcheck="false"
+          placeholder="search or type : for commands">
+        <div class="smooth-caret" id="smooth-caret"></div>
+      </div>
+
+      <div class="results-area" id="results-box" style="display: none;">
+        <div id="results"></div>
+      </div>
+    </div>
+
+    <div class="quote-area">
+      <span id="quote"></span>
+      <button id="next-quote-btn" class="refresh-btn" title="next quote">⟳</button>
+    </div>
+
+  </div>
+
+  <script src="script.js?v=4"></script>
+</body>
+
+</html>
