@@ -16,127 +16,15 @@
     <div class="bookmark-list" id="bookmarkList"></div>
   </div>
 
+  <script src="common.js?v=1"></script>
   <script>
-    const STORAGE_KEY = 'startpageBookmarks';
     let bookmarks = [];
 
-    const defaultBookmarks = [
-      { "name": "GitHub", "url": "https://github.com", "tags": ["dev", "code"] },
-      { "name": "Google", "url": "https://google.com", "tags": ["search"] },
-      { "name": "YouTube", "url": "https://youtube.com", "tags": ["video", "entertainment"] },
-      { "name": "Reddit", "url": "https://reddit.com", "tags": ["social"] }
-    ];
-
-    async function loadBookmarks() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        bookmarks = JSON.parse(saved);
-      } else {
-        try {
-          const response = await fetch('data.json');
-          const data = await response.json();
-          bookmarks = data.bookmarks || defaultBookmarks;
-        } catch (error) {
-          console.error('Failed to load data.json:', error);
-          bookmarks = defaultBookmarks;
-        }
-      }
+    async function loadConfigAndBookmarks() {
+      const data = await loadSharedData();
+      applySharedTheme(data.config, 'bookmarks');
+      bookmarks = data.bookmarks;
       renderBookmarks();
-    }
-
-    // --- Load config for theming ---
-    // --- Theme Application ---
-    function getOrCreateStyleElement(id) {
-      let element = document.getElementById(id);
-      if (!element) {
-        element = document.createElement('style');
-        element.id = id;
-        document.head.appendChild(element);
-      }
-      return element;
-    }
-
-    function removeElementById(id) {
-      const element = document.getElementById(id);
-      if (element) element.remove();
-    }
-
-    function applyBackgroundImage(backgroundImage, backgroundBlur) {
-      const blur = backgroundBlur || 0;
-      const filterValue = blur > 0 ? `blur(${blur}px)` : 'none';
-
-      const bgStyle = getOrCreateStyleElement('background-style');
-      bgStyle.textContent = `
-        body::before {
-          content: '';
-          position: fixed;
-          top: 0; left: 0;
-          width: 100%; height: 100%;
-          background-image: url('${backgroundImage}');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          filter: ${filterValue};
-          z-index: -2;
-        }
-      `;
-      document.body.style.backgroundImage = 'none';
-    }
-
-    function applyMask(maskColor, maskOpacity) {
-      removeElementById('background-mask');
-      const opacity = (maskOpacity || 60) / 100;
-      if (opacity > 0) {
-        const mask = document.createElement('div');
-        mask.id = 'background-mask';
-        Object.assign(mask.style, {
-          position: 'fixed', top: '0', left: '0',
-          width: '100%', height: '100%',
-          backgroundColor: maskColor || '#000000',
-          opacity: opacity.toString(),
-          zIndex: '-1', pointerEvents: 'none'
-        });
-        document.body.appendChild(mask);
-      }
-    }
-
-    function applyTheme(config) {
-      const root = document.documentElement;
-      const bg = config.backgroundColor || '#0a0a0f';
-      const fg = config.textColor || '#e0e0e0';
-      const accent = config.accentColor || '#4a9eff';
-
-      root.style.setProperty('--color-bg', bg);
-      root.style.setProperty('--color-fg', fg);
-      root.style.setProperty('--color-accent', accent);
-
-      document.body.style.backgroundColor = bg;
-      document.body.style.color = fg;
-
-      const bgImg = config.backgroundImage;
-      if (bgImg) {
-        applyBackgroundImage(bgImg, config.backgroundBlur);
-        applyMask(config.maskColor, config.maskOpacity);
-      } else {
-        removeElementById('background-style');
-        removeElementById('background-mask');
-      }
-    }
-
-    async function loadConfig() {
-      const saved = localStorage.getItem('startpageConfig');
-      if (saved) {
-        applyTheme(JSON.parse(saved));
-      } else {
-        // Try loading from data.json if not in local storage
-        try {
-          const response = await fetch('data.json');
-          const data = await response.json();
-          if (data.config) applyTheme(data.config);
-        } catch (e) {
-          console.error('Failed to load default config', e);
-        }
-      }
     }
 
     let draggedIndex = null;
@@ -271,7 +159,7 @@
     }
 
     function saveBookmarks() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+      localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(bookmarks));
     }
 
     function createNewBookmark() {
@@ -345,8 +233,7 @@
       return tagsString.replace(/,\s*/g, ', ').replace(/,\s*$/, '');
     }
 
-    loadConfig();
-    loadBookmarks();
+    loadConfigAndBookmarks();
   </script>
 </body>
 

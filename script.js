@@ -13,27 +13,7 @@ const searchInput = document.getElementById('search-input');
 const resultsContainer = document.getElementById('results');
 const resultsBox = document.getElementById('results-box');
 
-const STORAGE_KEYS = {
-  CONFIG: 'startpageConfig',
-  BOOKMARKS: 'startpageBookmarks'
-};
 
-const DEFAULT_CONFIG = {
-  backgroundColor: '#0a0e1a',
-  textColor: '#e0e0e0',
-  accentColor: '#4a9eff',
-  searchEngine: 'https://www.google.com/search?q=',
-  backgroundImage: '',
-  backgroundBlur: 0,
-  bgAnimation: 'globe',
-  asciiColor: '#4a9eff',
-  asciiOpacity: 12,
-  userName: 'axis',
-  customGreeting: '',
-  textColor2: '#cccccc',
-  quoteInterval: 30,
-  quoteFile: ''
-};
 
 let quoteIntervalId = null;
 
@@ -209,32 +189,9 @@ const Animations = {
 /* ---------- Data Loading ---------- */
 
 async function loadData() {
-  const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
-  const savedBookmarks = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
-
-  // Load config: localStorage first, then data.json fallback
-  if (savedConfig) {
-    config = JSON.parse(savedConfig);
-  }
-
-  // Load bookmarks: localStorage first, then data.json fallback
-  if (savedBookmarks) {
-    bookmarks = JSON.parse(savedBookmarks);
-  }
-
-  // If either is missing, try data.json for the missing piece
-  if (!savedConfig || !savedBookmarks) {
-    try {
-      const response = await fetch('data.json');
-      const data = await response.json();
-      if (!savedConfig) config = data.config || DEFAULT_CONFIG;
-      if (!savedBookmarks) bookmarks = data.bookmarks || [];
-    } catch (error) {
-      console.error('Failed to load data.json:', error);
-      if (!savedConfig) config = DEFAULT_CONFIG;
-      if (!savedBookmarks) bookmarks = [];
-    }
-  }
+  const data = await loadSharedData();
+  config = data.config;
+  bookmarks = data.bookmarks;
 }
 
 /* ---------- Style Helpers ---------- */
@@ -249,134 +206,12 @@ function getOrCreateStyleElement(id) {
   return element;
 }
 
-function removeElementById(id) {
-  const element = document.getElementById(id);
-  if (element) element.remove();
-}
-
-function hexToRgba(hex, alpha) {
-  if (!hex || hex.length < 7) return `rgba(74, 158, 255, ${alpha})`;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 /* ---------- Config Application ---------- */
 
-function applyBackgroundImage(backgroundImage, backgroundBlur) {
-  const blur = backgroundBlur || DEFAULT_CONFIG.backgroundBlur;
-  const filterValue = blur > 0 ? `blur(${blur}px)` : 'none';
-
-  const bgStyle = getOrCreateStyleElement('background-style');
-  bgStyle.textContent = `
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-image: url('${backgroundImage}');
-      background-size: cover;
-      background-position: center;
-      filter: ${filterValue};
-      z-index: -2;
-    }
-  `;
-  document.body.style.backgroundImage = 'none';
-}
-
-function applyMask(maskColor, maskOpacity) {
-  removeElementById('background-mask');
-  const opacity = (maskOpacity || DEFAULT_CONFIG.maskOpacity) / 100;
-  if (opacity > 0) {
-    const mask = document.createElement('div');
-    mask.id = 'background-mask';
-    Object.assign(mask.style, {
-      position: 'fixed', top: '0', left: '0',
-      width: '100%', height: '100%',
-      backgroundColor: maskColor || DEFAULT_CONFIG.maskColor,
-      opacity: opacity.toString(),
-      zIndex: '-1', pointerEvents: 'none'
-    });
-    document.body.appendChild(mask);
-  }
-}
-
 function applyConfig() {
-  const {
-    backgroundColor, textColor, accentColor,
-    backgroundImage, backgroundBlur
-  } = config;
+  applySharedTheme(config, 'index');
 
-  const root = document.documentElement;
-  root.style.setProperty('--color-bg', backgroundColor || DEFAULT_CONFIG.backgroundColor);
-  root.style.setProperty('--color-fg', textColor || DEFAULT_CONFIG.textColor);
-  root.style.setProperty('--color-accent', accentColor || DEFAULT_CONFIG.accentColor);
-
-  document.body.style.backgroundColor = backgroundColor || DEFAULT_CONFIG.backgroundColor;
-  document.body.style.color = textColor || DEFAULT_CONFIG.textColor;
-  searchInput.style.color = textColor || DEFAULT_CONFIG.textColor;
-
-  if (backgroundImage) {
-    // Only apply background image on index.html or root
-    const path = window.location.pathname;
-    const isIndex = path.endsWith('index.html') || path.endsWith('/') || path.endsWith('\\');
-
-    if (isIndex) {
-      applyBackgroundImage(backgroundImage, backgroundBlur);
-
-      // Add dark overlay for readability
-      let overlay = document.getElementById('bg-overlay');
-      if (!overlay) {
-        overlay = document.createElement('style');
-        overlay.id = 'bg-overlay';
-        document.head.appendChild(overlay);
-      }
-      overlay.innerHTML = `
-        body::after {
-          content: '';
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.55);
-          z-index: -1;
-          pointer-events: none;
-        }
-      `;
-
-      // Add text shadow to all text elements for better contrast
-      let textShadowStyle = document.getElementById('text-shadow-style');
-      if (!textShadowStyle) {
-        textShadowStyle = document.createElement('style');
-        textShadowStyle.id = 'text-shadow-style';
-        document.head.appendChild(textShadowStyle);
-      }
-      textShadowStyle.innerHTML = `
-        body, pre, input, .result-item, .category-header, .bookmark {
-          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-        }
-        ::placeholder {
-          text-shadow: none;
-        }
-      `;
-    } else {
-      // Not index page, remove background effects
-      document.body.style.backgroundImage = 'none';
-      removeElementById('background-style'); // Remove the background image style
-      removeElementById('bg-overlay');
-      removeElementById('text-shadow-style');
-    }
-  } else {
-    document.body.style.backgroundImage = 'none';
-    removeElementById('background-style'); // Ensure background-style is removed if no image
-    removeElementById('bg-overlay'); // Remove new overlay
-    removeElementById('text-shadow-style'); // Remove new text shadow
-    removeElementById('background-mask'); // Keep this as it's part of applyMask
-  }
-
-  const color = accentColor || DEFAULT_CONFIG.accentColor;
+  const color = config.accentColor || DEFAULT_CONFIG.accentColor;
   const style = getOrCreateStyleElement('dynamic-style');
   style.textContent = `
     :root {
@@ -598,23 +433,42 @@ function importData() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'application/json';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
   input.onchange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      document.body.removeChild(input);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
         if (data.config) localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(data.config));
         if (data.bookmarks) localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(data.bookmarks));
-        alert('Import successful! Page will reload.');
-        window.location.reload();
+
+        searchInput.value = 'Import successful! Reloading...';
+        setTimeout(() => window.location.reload(), 800);
       } catch (error) {
-        alert('Failed to import: Invalid file format');
+        searchInput.value = 'Failed to import: Invalid file format';
       }
+      document.body.removeChild(input);
     };
     reader.readAsText(file);
   };
+
+  // Clean up if the user cancels the dialog (focus returns to window)
+  window.addEventListener('focus', function cleanup() {
+    setTimeout(() => {
+      if (input.parentNode) {
+        document.body.removeChild(input);
+      }
+    }, 1000);
+    window.removeEventListener('focus', cleanup);
+  });
+
   input.click();
 }
 

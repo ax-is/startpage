@@ -321,44 +321,10 @@
     <div class="status" id="statusMsg"></div>
   </div>
 
+  <script src="common.js?v=1"></script>
   <script>
-    const STORAGE_KEY = 'startpageConfig';
 
-    const DEFAULT_CONFIG = {
-      backgroundColor: '#0a0e1a',
-      textColor: '#e0e0e0',
-      accentColor: '#4a9eff',
-      searchEngine: 'https://www.google.com/search?q=',
-      backgroundImage: '',
-      backgroundBlur: 0,
-      bgAnimation: 'globe',
-      asciiColor: '#4a9eff',
-      asciiOpacity: 12,
-      userName: 'axis',
-      customGreeting: '',
-      textColor2: '#cccccc',
-      quoteInterval: 30,
-      quoteFile: '',
-      quoteFileName: ''
-    };
 
-    const CONFIG_FIELDS = [
-      'backgroundColor',
-      'textColor',
-      'textColor2',
-      'accentColor',
-      'searchEngine',
-      'backgroundImage',
-      'backgroundBlur',
-      'bgAnimation',
-      'asciiColor',
-      'asciiOpacity',
-      'userName',
-      'customGreeting',
-      'quoteInterval',
-      'quoteFile',
-      'quoteFileName'
-    ];
 
     function getConfigFromInputs() {
       const config = CONFIG_FIELDS.reduce((acc, field) => {
@@ -415,74 +381,14 @@
     }
 
     async function loadSettings() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const config = JSON.parse(saved);
-        setInputsFromConfig(config);
+      const data = await loadSharedData();
+      const config = data.config;
+      setInputsFromConfig(config);
 
-        if (config.quoteFile && config.quoteFile.length > 0) {
-          document.getElementById('pickQuoteBtn').innerText = '✅ loaded';
-        }
-        applyTheme(config);
-      } else {
-        try {
-          const response = await fetch('data.json');
-          const data = await response.json();
-          const config = data.config || DEFAULT_CONFIG;
-          setInputsFromConfig(config);
-          applyTheme(config);
-        } catch (error) {
-          console.error('Failed to load data.json:', error);
-          setInputsFromConfig(DEFAULT_CONFIG);
-          applyTheme(DEFAULT_CONFIG);
-        }
+      if (config.quoteFile && config.quoteFile.length > 0) {
+        document.getElementById('pickQuoteBtn').innerText = '✅ loaded';
       }
-    }
-
-    function applyTheme(config) {
-      const root = document.documentElement;
-      root.style.setProperty('--color-bg', config.backgroundColor);
-      root.style.setProperty('--color-fg', config.textColor);
-      root.style.setProperty('--color-accent', config.accentColor);
-
-      document.body.style.backgroundColor = config.backgroundColor;
-      document.body.style.color = config.textColor;
-
-      // Ensure background image is NOT applied on config page
-      document.body.style.backgroundImage = 'none';
-      removeElementById('background-style');
-      removeElementById('background-mask');
-    }
-
-    function removeElementById(id) {
-      const element = document.getElementById(id);
-      if (element) element.remove();
-    }
-
-    function applyBackgroundImage(backgroundImage, backgroundBlur) {
-      const blur = backgroundBlur || 0;
-      const filterValue = blur > 0 ? `blur(${blur}px)` : 'none';
-
-      const bgStyle = document.createElement('style');
-      bgStyle.id = 'background-style';
-      bgStyle.textContent = `
-        body::before {
-          content: '';
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-image: url('${backgroundImage}');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          filter: ${filterValue};
-          z-index: -2;
-        }
-      `;
-      document.head.appendChild(bgStyle);
-      document.body.style.backgroundImage = 'none';
+      applySharedTheme(config, 'config');
     }
 
     function showStatus(msg) {
@@ -494,15 +400,15 @@
 
     function saveSettings() {
       const config = getConfigFromInputs();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-      applyTheme(config);
+      localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config));
+      applySharedTheme(config, 'config');
       showStatus('settings saved ✓');
     }
 
     function resetSettings() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_CONFIG));
+      localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(DEFAULT_CONFIG));
       setInputsFromConfig(DEFAULT_CONFIG);
-      applyTheme(DEFAULT_CONFIG);
+      applySharedTheme(DEFAULT_CONFIG, 'config');
       showStatus('reset successful ↺');
     }
 
@@ -511,7 +417,7 @@
       if (!element) return;
       element.addEventListener('input', () => {
         const config = getConfigFromInputs();
-        applyTheme(config);
+        applySharedTheme(config, 'config');
       });
       if (element.type === 'text') {
         element.addEventListener('focus', function () { this.select(); });
@@ -534,7 +440,7 @@
       reader.onload = (evt) => {
         document.getElementById('backgroundImage').value = evt.target.result;
         const config = getConfigFromInputs();
-        applyTheme(config);
+        applySharedTheme(config, 'config');
         showStatus('image loaded ✓');
       };
       reader.readAsDataURL(file);
@@ -555,7 +461,7 @@
         const textContent = e.target.result;
 
         if (textContent.length > 500000) {
-          alert('File matches too large for local storage! Please use a smaller file (< 500KB).');
+          showStatus('file too large (<500KB) ❌');
           return;
         }
 
