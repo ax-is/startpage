@@ -69,7 +69,7 @@ async function loadSharedData() {
             }
 
             if (!savedConfig || !savedBookmarks) {
-              await loadDefaults();
+              await loadDefaults(foundConfig || !!savedConfig, foundBookmarks || !!savedBookmarks);
             }
           }
           resolve({ config, bookmarks });
@@ -95,19 +95,19 @@ async function loadSharedData() {
       }
 
       if (!savedConfig || !savedBookmarks) {
-        loadDefaults().then(() => resolveFunc({ config, bookmarks }));
+        loadDefaults(!!savedConfig, !!savedBookmarks).then(() => resolveFunc({ config, bookmarks }));
       } else {
         resolveFunc({ config, bookmarks });
       }
     }
 
-    async function loadDefaults() {
+    async function loadDefaults(hasConfig, hasBookmarks) {
       try {
         const response = await fetch('data.json');
         if (response.ok) {
           const data = await response.json();
-          if (data.config && (!config || Object.keys(config).length === Object.keys(DEFAULT_CONFIG).length)) config = { ...config, ...data.config };
-          if (data.bookmarks && (bookmarks.length === DEFAULT_BOOKMARKS.length)) bookmarks = data.bookmarks;
+          if (data.config && !hasConfig) config = { ...config, ...data.config };
+          if (data.bookmarks && !hasBookmarks) bookmarks = data.bookmarks;
         }
       } catch (error) {
         console.error('Failed to load data.json:', error);

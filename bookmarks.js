@@ -1,4 +1,5 @@
 let bookmarks = [];
+let isDeleting = false;
 
 async function loadConfigAndBookmarks() {
   const data = await loadSharedData();
@@ -45,7 +46,7 @@ function handleDrop(e) {
     const [draggedItem] = bookmarks.splice(draggedIndex, 1);
     bookmarks.splice(dropIndex, 0, draggedItem);
     saveBookmarks();
-    renderBookmarks();
+    renderBookmarks(); // Explicitly render when dropping
   }
   return false;
 }
@@ -66,7 +67,6 @@ function attachDragHandlers(item) {
 function createBookmarkItem(bookmark, index) {
   const item = document.createElement('div');
   item.className = 'bookmark-edit-item';
-  item.draggable = true;
   item.dataset.index = index;
   item.innerHTML = `
     <div class="drag-handle">≡</div>
@@ -80,11 +80,17 @@ function createBookmarkItem(bookmark, index) {
       <button class="delete-btn" data-index="${index}" title="delete">×</button>
     </div>
   `;
+
+  const handle = item.querySelector('.drag-handle');
+  handle.addEventListener('mouseenter', () => item.draggable = true);
+  handle.addEventListener('mouseleave', () => item.draggable = false);
+
   attachDragHandlers(item);
   return item;
 }
 
 function handleInputChange() {
+  if (isDeleting) return;
   validateBookmarks();
   autoSaveBookmarks();
 }
@@ -106,10 +112,29 @@ function renderBookmarks() {
   addContainer.appendChild(addBtn);
   container.appendChild(addContainer);
 
-  document.querySelectorAll('.bookmark-name, .bookmark-url').forEach(input => {
+  document.querySelectorAll('.bookmark-name').forEach(input => {
     input.addEventListener('input', handleInputChange);
     input.addEventListener('focus', function () {
       this.select();
+    });
+  });
+
+  document.querySelectorAll('.bookmark-url').forEach(input => {
+    input.addEventListener('input', handleInputChange);
+    input.addEventListener('focus', function () {
+      this.select();
+    });
+    // Auto-detect name on blur if name is empty
+    input.addEventListener('blur', function () {
+      if (isDeleting) return;
+      const index = this.dataset.index;
+      const url = this.value.trim();
+      const nameInput = document.querySelector(`.bookmark-name[data-index="${index}"]`);
+
+      if (url && nameInput && (!nameInput.value || nameInput.value.trim() === '')) {
+        nameInput.value = extractNameFromUrl(url);
+        handleInputChange();
+      }
     });
   });
 
@@ -147,19 +172,53 @@ function createNewBookmark() {
 function addBookmarkAt(position) {
   bookmarks.splice(position, 0, createNewBookmark());
   saveBookmarks();
-  renderBookmarks();
+  renderBookmarks(); // Explicitly render when adding
 }
 
 function deleteBookmark(index) {
-  if (confirm('Delete this bookmark?')) {
-    bookmarks.splice(index, 1);
-    saveBookmarks();
-    renderBookmarks();
-  }
+  isDeleting = true;
+  bookmarks.splice(index, 1);
+  saveBookmarks();
+  renderBookmarks(); // Explicitly render when deleting
+  // Allow the DOM to settle before re-enabling input handlers to prevent ghost saves
+  setTimeout(() => {
+    isDeleting = false;
+  }, 50);
 }
 
 function parseTags(tagsString) {
   return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
+}
+
+function extractNameFromUrl(urlStr) {
+  if (!urlStr) return '';
+  try {
+    // Prefix with https:// just to parse it if protocol is missing
+    const validUrl = (urlStr.startsWith('http://') || urlStr.startsWith('https://')) ? urlStr : 'https://' + urlStr;
+    const urlObj = new URL(validUrl);
+    let hostname = urlObj.hostname;
+
+    // Remove www.
+    hostname = hostname.replace('www.', '');
+
+    // Split by dots
+    const parts = hostname.split('.');
+
+    // Handle special cases like 'gemini.google.com'
+    if (parts.length > 2 && parts[parts.length - 2] === 'google') {
+      return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+    }
+
+    // Usually the second to last part is the main name (e.g., [github], [com])
+    if (parts.length >= 2) {
+      const mainPart = parts[parts.length - 2];
+      return mainPart.charAt(0).toUpperCase() + mainPart.slice(1);
+    }
+
+    return hostname;
+  } catch (e) {
+    return urlStr; // Fallback to raw string if completely invalid
+  }
 }
 
 function autoSaveBookmarks() {

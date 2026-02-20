@@ -127,16 +127,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const blurSlider = document.getElementById('backgroundBlur');
   if (blurSlider) blurSlider.addEventListener('input', () => updateSliderValue('backgroundBlur', 'blurValue'));
-  
+
   const opacSlider = document.getElementById('asciiOpacity');
   if (opacSlider) opacSlider.addEventListener('input', () => updateSliderValue('asciiOpacity', 'opacityValue'));
-  
+
   const speedSlider = document.getElementById('asciiSpeed');
   if (speedSlider) speedSlider.addEventListener('input', () => updateSliderValue('asciiSpeed', 'speedValue'));
-  
+
   const saveBtn = document.getElementById('saveBtn');
   if (saveBtn) saveBtn.addEventListener('click', saveSettings);
-  
+
   const rtBtn = document.getElementById('resetBtn');
   if (rtBtn) rtBtn.addEventListener('click', resetSettings);
 
@@ -251,10 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
     clrQtBtn.addEventListener('click', () => {
       const qInput = document.getElementById('quoteFileNameInput');
       if (qInput) qInput.value = '';
-      
+
       const qFile = document.getElementById('quoteFile');
       if (qFile) qFile.value = '';
-      
+
       const qName = document.getElementById('quoteFileName');
       if (qName) qName.textContent = ''; // Clear legacy span if exists
       saveSettings();

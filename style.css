@@ -278,6 +278,34 @@ body {
   /* Rotate and scale on hover */
 }
 
+/* ---------- Icon Dock ---------- */
+.icon-dock {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  margin-top: 24px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.dock-icon {
+  color: var(--color-fg);
+  opacity: 0.4;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Bouncy hover */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dock-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: currentColor;
+}
+
 /* ---------- Results Area ---------- */
 .results-area {
   position: absolute;

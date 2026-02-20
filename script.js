@@ -12,6 +12,7 @@ let showingAllBookmarks = false;
 const searchInput = document.getElementById('search-input');
 const resultsContainer = document.getElementById('results');
 const resultsBox = document.getElementById('results-box');
+const iconDock = document.getElementById('icon-dock');
 
 
 
@@ -206,9 +207,87 @@ const Animations = {
           if (p.y < 0) { p.y = rows - 1; p.x = Math.random() * cols; }
           if (p.x < 0) p.x += cols; if (p.x >= cols) p.x -= cols;
           const px = Math.round(p.x), py = Math.round(p.y);
-          if (px >= 0 && px < cols && py >= 0 && py < rows) grid[py][px] = p.char;
         }
         el.textContent = grid.map(r => r.join('')).join('\n');
+        activeAnimationFrame = requestAnimationFrame(render);
+      })();
+    },
+
+    /* ====== 3D SPINNING DONUT (TORUS) ====== */
+    donut(el) {
+      const cols = 90, rows = 40;
+      let A = 0, B = 0;
+      let lastTime = 0;
+      const chars = '.,-~:;=!*#$@'.split('');
+
+      (function render(now) {
+        const speedRatio = (config.asciiSpeed !== undefined ? config.asciiSpeed : 50) / 50;
+        const delta = now - lastTime || 16.66;
+        lastTime = now;
+        const timeScale = speedRatio * (delta / 16.66);
+
+        const b = Array(cols * rows).fill(' ');
+        const z = Array(cols * rows).fill(0);
+
+        // Donut Math
+        for (let j = 0; j < 6.28; j += 0.07) {
+          for (let i = 0; i < 6.28; i += 0.02) {
+            const c = Math.sin(i), d = Math.cos(j), e = Math.sin(A), f = Math.sin(j), g = Math.cos(A),
+              h = d + 2, D = 1 / (c * h * e + f * g + 5), l = Math.cos(i),
+              m = Math.cos(B), n = Math.sin(B),
+              t = c * h * g - f * e;
+
+            const x = Math.floor(45 + 30 * D * (l * h * m - t * n)); // 45 is cols/2
+            const y = Math.floor(20 + 15 * D * (l * h * n + t * m)); // 20 is rows/2
+            const o = x + cols * y;
+            const N = Math.floor(8 * ((f * e - c * d * g) * m - c * d * e - f * g - l * d * n));
+
+            if (y >= 0 && y < rows && x >= 0 && x < cols && D > z[o]) {
+              z[o] = D;
+              b[o] = chars[N > 0 ? N : 0];
+            }
+          }
+        }
+
+        let out = '';
+        for (let k = 0; k < cols * rows; k++) {
+          out += k % cols === cols - 1 ? b[k] + '\n' : b[k];
+        }
+        el.textContent = out;
+
+        A += 0.04 * timeScale;
+        B += 0.02 * timeScale;
+        activeAnimationFrame = requestAnimationFrame(render);
+      })();
+    },
+
+    /* ====== FLOWING SINE WAVES ====== */
+    waves(el) {
+      const cols = 90, rows = 40;
+      let time = 0;
+      let lastTime = 0;
+      const chars = ' .:-=+*#%@';
+
+      (function render(now) {
+        const speedRatio = (config.asciiSpeed !== undefined ? config.asciiSpeed : 50) / 50;
+        const delta = now - lastTime || 16.66;
+        lastTime = now;
+        const timeScale = speedRatio * (delta / 16.66);
+
+        let out = '';
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const nx = x / cols * 10;
+            const ny = y / rows * 10;
+            const val = Math.sin(nx + time) + Math.cos(ny + time * 0.5) + Math.sin(nx * 0.5 + ny * 0.5 - time);
+            const normVal = Math.max(0, Math.min(1, (val + 3) / 6));
+            out += chars[Math.floor(normVal * (chars.length - 1))];
+          }
+          out += '\n';
+        }
+        el.textContent = out;
+
+        time += 0.05 * timeScale;
         activeAnimationFrame = requestAnimationFrame(render);
       })();
     }
@@ -220,6 +299,7 @@ async function loadData() {
   const data = await loadSharedData();
   config = data.config;
   bookmarks = data.bookmarks;
+  renderIconDock();
 }
 
 /* ---------- Style Helpers ---------- */
@@ -265,6 +345,12 @@ function applyConfig() {
       border-left-color: ${color};
       background-color: ${hexToRgba(color, STYLE_CONSTANTS.SELECTED_OPACITY)};
       box-shadow: inset 3px 0 12px -3px ${hexToRgba(color, 0.15)};
+    }
+    .dock-icon:hover {
+      color: ${color};
+      opacity: 1;
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 8px ${hexToRgba(color, 0.6)});
     }
     .tag { color: ${hexToRgba(color, 0.4)}; }
     a { color: ${color}; }
@@ -556,6 +642,81 @@ function createTagsElement(tags) {
   return container;
 }
 
+function getIconSlugForUrl(url) {
+  if (!url) return 'internetexplorer';
+
+  try {
+    const validUrl = (url.startsWith('http://') || url.startsWith('https://')) ? url.toLowerCase() : 'https://' + url.toLowerCase();
+    const urlObj = new URL(validUrl);
+    let hostname = urlObj.hostname.replace(/^www\./, '');
+
+    // Exact matches or specific overrides
+    if (hostname === 'x.com' || hostname === 'twitter.com') return 'x';
+    if (hostname.includes('chatgpt.com') || hostname.includes('openai.com')) return 'openai';
+    if (hostname.includes('gemini.google.com') || hostname.includes('gemini.com')) return 'googlegemini';
+    if (hostname.includes('mail.google.com')) return 'gmail';
+
+    // Dynamic extraction for everything else
+    const parts = hostname.split('.');
+    if (parts.length >= 2) {
+      return parts[parts.length - 2].replace(/[^a-z0-9]/g, '');
+    }
+    return hostname.replace(/[^a-z0-9]/g, '');
+  } catch (e) {
+    return 'internetexplorer';
+  }
+}
+
+function ensureAbsoluteUrl(url) {
+  if (!url) return '#';
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  return 'https://' + url;
+}
+
+function renderIconDock() {
+  if (!iconDock) return;
+  iconDock.innerHTML = '';
+
+  // Create icons for the first 6 bookmarks
+  const topBookmarks = bookmarks.slice(0, 6);
+  if (topBookmarks.length === 0) return;
+
+  topBookmarks.forEach(bm => {
+    const link = document.createElement('a');
+    link.className = 'dock-icon';
+    link.href = ensureAbsoluteUrl(bm.url);
+    link.title = bm.name;
+
+    const slug = getIconSlugForUrl(bm.url);
+
+    // Fetch raw SVG from Simple Icons unpkg CDN
+    fetch(`https://unpkg.com/simple-icons@v11/icons/${slug}.svg`)
+      .then(res => {
+        if (!res.ok) throw new Error('Icon not found');
+        return res.text();
+      })
+      .then(svgText => {
+        link.innerHTML = svgText;
+      })
+      .catch(err => {
+        // Fallback 1: Google Favicon API
+        try {
+          const validUrl = (bm.url.startsWith('http://') || bm.url.startsWith('https://')) ? bm.url : 'https://' + bm.url;
+          const hostname = new URL(validUrl).hostname;
+          link.innerHTML = `<img src="https://www.google.com/s2/favicons?domain=${hostname}&sz=64" alt="${bm.name}" style="width: 24px; height: 24px; border-radius: 4px; transition: transform 0.2s;">`;
+        } catch (e) {
+          // Fallback 2: Site initials
+          const initial = bm.name ? bm.name.trim().charAt(0).toUpperCase() : '?';
+          link.innerHTML = `<span style="font-weight: 700; font-size: 24px; font-family: var(--font-primary, sans-serif);">${initial}</span>`;
+        }
+      });
+
+    iconDock.appendChild(link);
+  });
+}
+
 function showResultsBox() { resultsBox.style.display = ''; }
 function hideResultsBox() { resultsBox.style.display = 'none'; }
 
@@ -589,7 +750,7 @@ function renderResults() {
   updateScrollFade();
 }
 
-function openBookmark(bookmark) { window.location.href = bookmark.url; }
+function openBookmark(bookmark) { window.location.href = ensureAbsoluteUrl(bookmark.url); }
 
 /* ---------- Help Overlay ---------- */
 
@@ -746,8 +907,10 @@ document.addEventListener('keydown', (e) => {
 /* ---------- URL Detection ---------- */
 
 function isUrl(q) {
-  return q.startsWith('http://') || q.startsWith('https://') ||
-    /^[a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+/.test(q);
+  if (q.startsWith('http://') || q.startsWith('https://')) return true;
+  // Match standard domains (e.g. example.com), localhost, or IPs, with optional ports and paths
+  const urlRegex = /^(localhost|(\d{1,3}\.){3}\d{1,3}|([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(:\d+)?(\/.*)?$/;
+  return urlRegex.test(q);
 }
 
 /* ---------- Key Handlers ---------- */
@@ -795,6 +958,7 @@ document.addEventListener('visibilitychange', async () => {
     if (data.bookmarks) {
       bookmarks = data.bookmarks;
       if (showingAllBookmarks) { filteredBookmarks = bookmarks; renderResults(); }
+      renderIconDock();
     }
     updateGreeting();
   }
@@ -812,6 +976,7 @@ window.addEventListener('storage', (e) => {
     try {
       bookmarks = JSON.parse(e.newValue);
       if (showingAllBookmarks) { filteredBookmarks = bookmarks; renderResults(); }
+      renderIconDock();
     } catch (err) {
       console.error('Failed to parse updated bookmarks:', err);
     }
