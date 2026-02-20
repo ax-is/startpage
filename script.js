@@ -406,9 +406,9 @@ const commandHandlers = {
   ':config': () => { window.location.href = 'config.html'; },
   ':bookmark': () => { window.location.href = 'bookmarks.html'; },
   ':help': () => { toggleHelp(); },
-  ':list': () => {
-    const saved = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
-    if (saved) bookmarks = JSON.parse(saved);
+  ':list': async () => {
+    const data = await loadSharedData();
+    if (data.bookmarks) bookmarks = data.bookmarks;
     showingAllBookmarks = true;
     filteredBookmarks = bookmarks;
     selectedIndex = 0;
@@ -418,8 +418,8 @@ const commandHandlers = {
   },
   ':reset': () => {
     if (confirm('Reset all settings and bookmarks to default? This cannot be undone.')) {
-      localStorage.removeItem(STORAGE_KEYS.CONFIG);
-      localStorage.removeItem(STORAGE_KEYS.BOOKMARKS);
+      removeSharedData(STORAGE_KEYS.CONFIG);
+      removeSharedData(STORAGE_KEYS.BOOKMARKS);
       window.location.reload();
     }
   },
@@ -435,18 +435,14 @@ function executeCommand(query) {
 
 /* ---------- Export / Import ---------- */
 
-function getFromLocalStorage(key, fallback) {
-  const saved = localStorage.getItem(key);
-  return saved ? JSON.parse(saved) : fallback;
-}
-
-function exportData() {
-  const data = {
-    config: getFromLocalStorage(STORAGE_KEYS.CONFIG, config),
-    bookmarks: getFromLocalStorage(STORAGE_KEYS.BOOKMARKS, bookmarks),
+async function exportData() {
+  const data = await loadSharedData();
+  const exportFormat = {
+    config: data.config,
+    bookmarks: data.bookmarks,
     exportDate: new Date().toISOString()
   };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(exportFormat, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -474,8 +470,8 @@ function importData() {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        if (data.config) localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(data.config));
-        if (data.bookmarks) localStorage.setItem(STORAGE_KEYS.BOOKMARKS, JSON.stringify(data.bookmarks));
+        if (data.config) saveSharedData(STORAGE_KEYS.CONFIG, data.config);
+        if (data.bookmarks) saveSharedData(STORAGE_KEYS.BOOKMARKS, data.bookmarks);
 
         searchInput.value = 'Import successful! Reloading...';
         setTimeout(() => window.location.reload(), 800);
@@ -793,11 +789,11 @@ function handleEscapeKey() {
 
 /* ---------- Visibility Change ---------- */
 
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', async () => {
   if (!document.hidden) {
-    const saved = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
-    if (saved) {
-      bookmarks = JSON.parse(saved);
+    const data = await loadSharedData();
+    if (data.bookmarks) {
+      bookmarks = data.bookmarks;
       if (showingAllBookmarks) { filteredBookmarks = bookmarks; renderResults(); }
     }
     updateGreeting();
@@ -829,10 +825,23 @@ async function init() {
   applyConfig();
   updateGreeting();
   initQuotes();
-  setTimeout(() => {
-    searchInput.focus();
-    updateSmoothCaret();
-  }, 100);
+
+  // Aggressively attempt to focus the input area
+  const focusSearch = () => {
+    if (document.activeElement !== searchInput) {
+      searchInput.focus();
+      updateSmoothCaret();
+    }
+  };
+
+  setTimeout(focusSearch, 100);
+
+  // Focus when the tab becomes visible again
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      setTimeout(focusSearch, 50);
+    }
+  });
 }
 
 init();

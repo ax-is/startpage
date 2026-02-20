@@ -36,30 +36,113 @@ async function loadSharedData() {
   let config = { ...DEFAULT_CONFIG };
   let bookmarks = [...DEFAULT_BOOKMARKS];
 
-  const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
-  const savedBookmarks = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+  return new Promise((resolve) => {
+    // Check if running as an extension
+    if (typeof window.chrome !== 'undefined' && window.chrome.storage && window.chrome.storage.local) {
+      try {
+        window.chrome.storage.local.get([STORAGE_KEYS.CONFIG, STORAGE_KEYS.BOOKMARKS], async (result) => {
+          if (window.chrome.runtime.lastError) {
+            console.warn("Chrome storage get failed:", window.chrome.runtime.lastError);
+            return fallbackLoad(resolve);
+          }
 
-  if (savedConfig) {
-    try { config = { ...config, ...JSON.parse(savedConfig) }; } catch (e) { }
-  }
-  if (savedBookmarks) {
-    try { bookmarks = JSON.parse(savedBookmarks); } catch (e) { }
-  }
+          let foundConfig = false;
+          let foundBookmarks = false;
 
-  if (!savedConfig || !savedBookmarks) {
-    try {
-      const response = await fetch('data.json');
-      if (response.ok) {
-        const data = await response.json();
-        if (!savedConfig && data.config) config = { ...config, ...data.config };
-        if (!savedBookmarks && data.bookmarks) bookmarks = data.bookmarks;
+          if (result[STORAGE_KEYS.CONFIG]) {
+            try { config = { ...config, ...result[STORAGE_KEYS.CONFIG] }; foundConfig = true; } catch (e) { }
+          }
+          if (result[STORAGE_KEYS.BOOKMARKS]) {
+            try { bookmarks = result[STORAGE_KEYS.BOOKMARKS]; foundBookmarks = true; } catch (e) { }
+          }
+
+          if (!foundConfig || !foundBookmarks) {
+            // If chrome storage is missing data, check localStorage first
+            const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
+            const savedBookmarks = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+
+            if (!foundConfig && savedConfig) {
+              try { config = { ...config, ...JSON.parse(savedConfig) }; } catch (e) { }
+            }
+            if (!foundBookmarks && savedBookmarks) {
+              try { bookmarks = JSON.parse(savedBookmarks); } catch (e) { }
+            }
+
+            if (!savedConfig || !savedBookmarks) {
+              await loadDefaults();
+            }
+          }
+          resolve({ config, bookmarks });
+        });
+      } catch (e) {
+        console.warn("Chrome storage API error during get:", e);
+        fallbackLoad(resolve);
       }
-    } catch (error) {
-      console.error('Failed to load data.json:', error);
+    } else {
+      fallbackLoad(resolve);
+    }
+
+    function fallbackLoad(resolveFunc) {
+      // Fallback for regular web page or when chrome.storage fails
+      const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
+      const savedBookmarks = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+
+      if (savedConfig) {
+        try { config = { ...config, ...JSON.parse(savedConfig) }; } catch (e) { }
+      }
+      if (savedBookmarks) {
+        try { bookmarks = JSON.parse(savedBookmarks); } catch (e) { }
+      }
+
+      if (!savedConfig || !savedBookmarks) {
+        loadDefaults().then(() => resolveFunc({ config, bookmarks }));
+      } else {
+        resolveFunc({ config, bookmarks });
+      }
+    }
+
+    async function loadDefaults() {
+      try {
+        const response = await fetch('data.json');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.config && (!config || Object.keys(config).length === Object.keys(DEFAULT_CONFIG).length)) config = { ...config, ...data.config };
+          if (data.bookmarks && (bookmarks.length === DEFAULT_BOOKMARKS.length)) bookmarks = data.bookmarks;
+        }
+      } catch (error) {
+        console.error('Failed to load data.json:', error);
+      }
+    }
+  });
+}
+
+function saveSharedData(key, data) {
+  // Always save to localStorage as primary/fallback
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.warn("LocalStorage save failed, quota exceeded?", e);
+  }
+
+  // Attempt to save to extension storage if available
+  if (typeof window.chrome !== 'undefined' && window.chrome.storage && window.chrome.storage.local) {
+    try {
+      window.chrome.storage.local.set({ [key]: data }, () => {
+        if (window.chrome.runtime.lastError) {
+          console.warn("Chrome storage save failed:", window.chrome.runtime.lastError);
+        }
+      });
+    } catch (e) {
+      console.warn("Chrome storage API error:", e);
     }
   }
+}
 
-  return { config, bookmarks };
+function removeSharedData(key) {
+  localStorage.removeItem(key);
+  if (typeof window.chrome !== 'undefined' && window.chrome.storage && window.chrome.storage.local) {
+    window.chrome.storage.local.remove([key]);
+  }
 }
 
 function hexToRgba(hex, alpha) {

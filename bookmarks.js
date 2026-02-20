@@ -1,0 +1,216 @@
+let bookmarks = [];
+
+async function loadConfigAndBookmarks() {
+  const data = await loadSharedData();
+  applySharedTheme(data.config, 'bookmarks');
+  bookmarks = data.bookmarks;
+  renderBookmarks();
+}
+
+let draggedIndex = null;
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function clearDragOverClass() {
+  document.querySelectorAll('.bookmark-edit-item').forEach(item => {
+    item.classList.remove('drag-over');
+  });
+}
+
+function handleDragStart(e) {
+  draggedIndex = parseInt(e.currentTarget.dataset.index);
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  clearDragOverClass();
+  e.currentTarget.classList.add('drag-over');
+  return false;
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  clearDragOverClass();
+
+  const dropIndex = parseInt(e.currentTarget.dataset.index);
+  if (draggedIndex !== null && draggedIndex !== dropIndex) {
+    const [draggedItem] = bookmarks.splice(draggedIndex, 1);
+    bookmarks.splice(dropIndex, 0, draggedItem);
+    saveBookmarks();
+    renderBookmarks();
+  }
+  return false;
+}
+
+function handleDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  clearDragOverClass();
+  draggedIndex = null;
+}
+
+function attachDragHandlers(item) {
+  item.addEventListener('dragstart', handleDragStart);
+  item.addEventListener('dragover', handleDragOver);
+  item.addEventListener('drop', handleDrop);
+  item.addEventListener('dragend', handleDragEnd);
+}
+
+function createBookmarkItem(bookmark, index) {
+  const item = document.createElement('div');
+  item.className = 'bookmark-edit-item';
+  item.draggable = true;
+  item.dataset.index = index;
+  item.innerHTML = `
+    <div class="drag-handle">≡</div>
+    <div class="bookmark-card">
+      <div class="bookmark-fields">
+        <span class="bookmark-num" style="color: var(--color-muted); font-size: 0.8rem; margin-right: 8px; min-width: 20px;">${index + 1}.</span>
+        <input type="text" class="bookmark-name" value="${escapeHtml(bookmark.name)}" placeholder="Name" data-index="${index}">
+        <input type="text" class="bookmark-url" value="${escapeHtml(bookmark.url)}" placeholder="https://url..." data-index="${index}">
+        <input type="text" class="bookmark-tags" value="${escapeHtml(bookmark.tags.join(', '))}" placeholder="tags" data-index="${index}">
+      </div>
+      <button class="delete-btn" data-index="${index}" title="delete">×</button>
+    </div>
+  `;
+  attachDragHandlers(item);
+  return item;
+}
+
+function handleInputChange() {
+  validateBookmarks();
+  autoSaveBookmarks();
+}
+
+function renderBookmarks() {
+  const container = document.getElementById('bookmarkList');
+  container.innerHTML = '';
+
+  bookmarks.forEach((bookmark, index) => {
+    container.appendChild(createBookmarkItem(bookmark, index));
+  });
+
+  // Add "Add New" button at the bottom
+  const addContainer = document.createElement('div');
+  addContainer.className = 'add-btn-container';
+  const addBtn = document.createElement('button');
+  addBtn.textContent = '+ add new bookmark';
+  addBtn.onclick = () => addBookmarkAt(bookmarks.length);
+  addContainer.appendChild(addBtn);
+  container.appendChild(addContainer);
+
+  document.querySelectorAll('.bookmark-name, .bookmark-url').forEach(input => {
+    input.addEventListener('input', handleInputChange);
+    input.addEventListener('focus', function () {
+      this.select();
+    });
+  });
+
+  document.querySelectorAll('.bookmark-tags').forEach(input => {
+    input.addEventListener('input', handleInputChange);
+    input.addEventListener('focus', function () {
+      this.select();
+    });
+    input.addEventListener('blur', (e) => {
+      const normalized = normalizeTagsFormat(e.target.value);
+      if (e.target.value !== normalized) {
+        e.target.value = normalized;
+        handleInputChange();
+      }
+    });
+  });
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      deleteBookmark(parseInt(e.target.dataset.index));
+    });
+  });
+
+  validateBookmarks();
+}
+
+function saveBookmarks() {
+  saveSharedData(STORAGE_KEYS.BOOKMARKS, bookmarks);
+}
+
+function createNewBookmark() {
+  return { name: '', url: '', tags: [] };
+}
+
+function addBookmarkAt(position) {
+  bookmarks.splice(position, 0, createNewBookmark());
+  saveBookmarks();
+  renderBookmarks();
+}
+
+function deleteBookmark(index) {
+  if (confirm('Delete this bookmark?')) {
+    bookmarks.splice(index, 1);
+    saveBookmarks();
+    renderBookmarks();
+  }
+}
+
+function parseTags(tagsString) {
+  return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
+}
+
+function autoSaveBookmarks() {
+  const nameInputs = document.querySelectorAll('.bookmark-name');
+  const urlInputs = document.querySelectorAll('.bookmark-url');
+  const tagsInputs = document.querySelectorAll('.bookmark-tags');
+
+  bookmarks = Array.from(nameInputs).map((nameInput, index) => ({
+    name: nameInput.value,
+    url: urlInputs[index].value,
+    tags: parseTags(tagsInputs[index].value)
+  }));
+
+  saveBookmarks();
+}
+
+function isValidUrl(url) {
+  if (!url) return false;
+  try {
+    new URL(url);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function toggleError(input, hasError) {
+  input.classList.toggle('error', hasError);
+}
+
+function validateBookmarks() {
+  document.querySelectorAll('.bookmark-name').forEach(input => {
+    toggleError(input, input.value.trim() === '');
+  });
+
+  document.querySelectorAll('.bookmark-url').forEach(input => {
+    const url = input.value.trim();
+    toggleError(input, url === '' || !isValidUrl(url));
+  });
+
+  document.querySelectorAll('.bookmark-tags').forEach(input => {
+    const hasInvalidFormat = input.value && /,(?!\s|$)/.test(input.value);
+    toggleError(input, hasInvalidFormat);
+  });
+}
+
+function normalizeTagsFormat(tagsString) {
+  if (!tagsString) return '';
+  return tagsString.replace(/,\s*/g, ', ').replace(/,\s*$/, '');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadConfigAndBookmarks();
+});
