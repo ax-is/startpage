@@ -55,8 +55,8 @@ function setInputsFromConfig(config) {
   const custom = document.getElementById('quoteIntervalCustom');
 
   if (select && custom) {
-    if (['15', '30', '60'].includes(String(interval))) {
-      select.value = interval;
+    if (['none', '15', '30', '60'].includes(String(interval))) {
+      select.value = String(interval);
       custom.style.display = 'none';
     } else {
       select.value = 'custom';

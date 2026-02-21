@@ -7,6 +7,7 @@
   <title>Settings — Orbit</title>
   <link rel="icon" type="image/svg+xml"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='5'></circle><ellipse cx='12' cy='12' rx='10' ry='3' transform='rotate(-20 12 12)'></ellipse></svg>">
+  <script src="theme-init.js"></script>
   <link rel="stylesheet" href="style.css?v=4">
   <style>
     html,
@@ -288,7 +289,7 @@
       </div>
       <div class="slider-row">
         <label>speed: <span id="speedValue">50</span>%</label>
-        <input type="range" id="asciiSpeed" value="50" min="10" max="200" step="10">
+        <input type="range" id="asciiSpeed" value="50" min="0" max="200" step="1">
       </div>
     </div>
 
@@ -333,6 +334,7 @@
         <label>quote timer</label>
         <div style="flex: 1; display: flex; gap: 8px; align-items: center; min-width: 0;">
           <select id="quoteIntervalSelect" style="flex: 1;">
+            <option value="none">none</option>
             <option value="15">15 min</option>
             <option value="30">30 min</option>
             <option value="60">60 min</option>

@@ -364,22 +364,38 @@ function applyConfig() {
 /* ---------- Greeting & Quotes ---------- */
 
 let QUOTES = [
-  '"The only way to do great work is to love what you do." — Steve Jobs',
-  '"Simplicity is the ultimate sophistication." — Leonardo da Vinci',
-  '"Talk is cheap. Show me the code." — Linus Torvalds',
-  '"First, solve the problem. Then, write the code." — John Johnson',
-  '"The best error message is the one that never shows up." — Thomas Fuchs',
-  '"Code is like humor. When you have to explain it, it\'s bad." — Cory House',
-  '"Make it work, make it right, make it fast." — Kent Beck',
-  '"Any fool can write code that a computer can understand." — Martin Fowler',
-  '"Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away." — Antoine de Saint-Exupéry',
-  '"The computer was born to solve problems that did not exist before." — Bill Gates',
-  '"Debugging is twice as hard as writing the code in the first place." — Brian Kernighan',
-  '"Programs must be written for people to read." — Harold Abelson',
-  '"In the middle of difficulty lies opportunity." — Albert Einstein',
-  '"The best time to plant a tree was 20 years ago. The second best time is now." — Chinese Proverb',
-  '"Stay hungry, stay foolish." — Steve Jobs',
-  '"Not all those who wander are lost." — J.R.R. Tolkien'
+  "Pay attention to how your left hemisphere is letting go of the walls around you",
+  "Your testicles are now synchronized with your physical self",
+  "Be the reason why a stranger throws up today",
+  "It's never too late to summon demons",
+  "When the world ends, what we have strangled can't be unstrangled",
+  "Earth is just an angry child in denial of death",
+  "Murder is something that eats your soul for breakfast",
+  "Never contextualize a Tyrannosaurus rex",
+  "The two things you need in order to die happily are feelings and a bow and arrow",
+  "There is no 'I' in 'human embryo'",
+  "You are about to turn into a pig",
+  "Acid is awesome all the time, but so are you",
+  "Get rid of everybody else",
+  "Keep interrupting people",
+  "If you want to be loved, you have to try being ugly",
+  "Don't try to be popular. Be suspicious about modern medicine",
+  "Dare to believe in all negativity",
+  "Cats have been invented to generate entertainment value",
+  "Individuality feels horrible to politicians",
+  "A corpse doesn't have to pay taxes",
+  "Just because you're ugly doesn't mean you're not social",
+  "Stop being a coward and start being a disappointment",
+  "A weird mother can often be turned into a funny boyfriend",
+  "As soon as you forget how to manipulate him, you forget how to entertain him",
+  "Have you ever tried simply giving up?",
+  "\"Simplicity is the ultimate sophistication.\" — Leonardo da Vinci",
+  "\"Know yourself and you will know the universe and the gods.\" — Socrates",
+  "\"Clothes make the man. Naked people have little or no influence in society.\" — Mark Twain",
+  "\"There are no facts, only interpretations.\" — Friedrich Nietzsche",
+  "\"The code is more what you'd call 'guidelines' than actual rules\". — Captain Jack Sparrow",
+  "\"You have power over your mind - not outside events. Realize this, and you will find strength.\" — Marcus Aurelius",
+  "\"I write differently from what I speak, I speak differently from what I think, I think differently from the way I ought to think, and so it all proceeds into deepest darkness.\" — Franz Kafka"
 ];
 
 let currentQuoteIndex = Math.floor(Math.random() * QUOTES.length);
@@ -456,6 +472,22 @@ function initQuotes() {
     } catch (e) {
       console.error('Invalid quote file data', e);
     }
+  }
+
+  if (config.quoteInterval === 'none') {
+    el.textContent = '';
+    el.style.display = 'none';
+    const nextBtn = document.getElementById('next-quote-btn');
+    if (nextBtn) nextBtn.style.display = 'none';
+    if (quoteIntervalId) {
+      clearInterval(quoteIntervalId);
+      quoteIntervalId = null;
+    }
+    return;
+  } else {
+    el.style.display = '';
+    const nextBtn = document.getElementById('next-quote-btn');
+    if (nextBtn) nextBtn.style.display = '';
   }
 
   el.textContent = QUOTES[currentQuoteIndex];
