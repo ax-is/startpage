@@ -9,6 +9,9 @@
   "permissions": [
     "storage"
   ],
+  "host_permissions": [
+    "*://suggestqueries.google.com/"
+  ],
   "icons": {
     "128": "icon.png"
   }

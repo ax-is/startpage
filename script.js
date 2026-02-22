@@ -7,6 +7,7 @@ let config = {};
 let filteredBookmarks = [];
 let selectedIndex = 0;
 let currentCommandSuggestions = [];
+let currentSearchSuggestions = [];
 let showingAllBookmarks = false;
 
 const searchInput = document.getElementById('search-input');
@@ -622,6 +623,23 @@ function bookmarkMatches(bookmark, lowerQuery) {
     bookmark.tags.some(tag => tag.toLowerCase().includes(lowerQuery));
 }
 
+let activeSuggestController = null;
+
+async function fetchSearchSuggestions(query) {
+  if (activeSuggestController) activeSuggestController.abort();
+  activeSuggestController = new AbortController();
+
+  try {
+    const res = await fetch(`https://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(query)}`, {
+      signal: activeSuggestController.signal
+    });
+    const data = await res.json();
+    return data[1] || [];
+  } catch (e) {
+    return [];
+  }
+}
+
 function filterBookmarks(query) {
   if (!query) {
     filteredBookmarks = showingAllBookmarks ? bookmarks : [];
@@ -635,15 +653,34 @@ function filterBookmarks(query) {
     showingAllBookmarks = false;
     const matched = commands.filter(cmd => cmd.name.startsWith(query.toLowerCase()));
     currentCommandSuggestions = matched;
+    currentSearchSuggestions = [];
     selectedIndex = 0;
     renderCommandSuggestions(matched);
     return;
   }
 
   currentCommandSuggestions = [];
+  currentSearchSuggestions = [];
   filteredBookmarks = bookmarks.filter(b => bookmarkMatches(b, query.toLowerCase()));
   selectedIndex = 0;
-  renderResults();
+
+  if (filteredBookmarks.length === 0 && !isUrl(query) && query.trim().length > 0) {
+    if (activeSuggestController) activeSuggestController.abort();
+    renderResults();
+
+    fetchSearchSuggestions(query).then(suggestions => {
+      if (searchInput.value.trim().toLowerCase() !== query.trim().toLowerCase()) return;
+      currentSearchSuggestions = suggestions.slice(0, 6);
+      selectedIndex = 0;
+      renderSearchSuggestions(currentSearchSuggestions);
+    });
+  } else {
+    if (activeSuggestController) {
+      activeSuggestController.abort();
+      activeSuggestController = null;
+    }
+    renderResults();
+  }
 }
 
 /* ---------- Rendering ---------- */
@@ -768,6 +805,25 @@ function renderCommandSuggestions(matched) {
   updateScrollFade();
 }
 
+function renderSearchSuggestions(suggestions) {
+  resultsContainer.innerHTML = '';
+  if (suggestions.length === 0) { hideResultsBox(); return; }
+  showResultsBox();
+
+  suggestions.forEach((sug, i) => {
+    const item = createResultItem(i === selectedIndex, () => {
+      searchInput.value = sug;
+      window.location.href = (config.searchEngine || DEFAULT_CONFIG.searchEngine) + encodeURIComponent(sug);
+    });
+    item.appendChild(createTextElement('bookmark-name', sug));
+
+    // We optionally remove URL subtitle and tags to keep it clean.
+
+    resultsContainer.appendChild(item);
+  });
+  updateScrollFade();
+}
+
 function renderResults() {
   resultsContainer.innerHTML = '';
   if (filteredBookmarks.length === 0) { hideResultsBox(); return; }
@@ -844,7 +900,11 @@ function scrollSelectedIntoView() {
 /* ---------- Navigation ---------- */
 
 function moveSelection(dir) {
-  const items = currentCommandSuggestions.length > 0 ? currentCommandSuggestions : filteredBookmarks;
+  let items = [];
+  if (currentCommandSuggestions.length > 0) items = currentCommandSuggestions;
+  else if (filteredBookmarks.length > 0) items = filteredBookmarks;
+  else if (currentSearchSuggestions.length > 0) items = currentSearchSuggestions;
+
   if (items.length === 0) return;
   const delta = dir === 'down' ? 1 : -1;
   const next = selectedIndex + delta;
@@ -954,7 +1014,14 @@ function handleEnterKey() {
     const cmd = currentCommandSuggestions[selectedIndex];
     searchInput.value = cmd.name;
     currentCommandSuggestions = [];
+    currentSearchSuggestions = [];
     executeCommand(cmd.name);
+    return;
+  }
+
+  if (currentSearchSuggestions.length > 0) {
+    const sug = currentSearchSuggestions[selectedIndex];
+    window.location.href = (config.searchEngine || DEFAULT_CONFIG.searchEngine) + encodeURIComponent(sug);
     return;
   }
 
