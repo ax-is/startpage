@@ -644,8 +644,8 @@ async function fetchSearchSuggestions(query) {
 
     // JSONP Fallback for standard web (Vercel CORS bypass)
     return new Promise((resolve) => {
-      const callbackName = `ddg_cb_${reqId}`;
-      const scriptId = `ddg_script_${reqId}`;
+      const callbackName = `google_cb_${reqId}`;
+      const scriptId = `google_script_${reqId}`;
 
       window[callbackName] = function (data) {
         delete window[callbackName];
@@ -657,8 +657,8 @@ async function fetchSearchSuggestions(query) {
           return;
         }
 
-        if (data && Array.isArray(data)) {
-          resolve(data.map(item => item.phrase));
+        if (data && Array.isArray(data) && Array.isArray(data[1])) {
+          resolve(data[1]);
         } else {
           resolve([]);
         }
@@ -666,7 +666,7 @@ async function fetchSearchSuggestions(query) {
 
       const script = document.createElement('script');
       script.id = scriptId;
-      script.src = `https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}&callback=${callbackName}`;
+      script.src = `https://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(query)}&callback=${callbackName}`;
 
       // Failsafe timeout
       setTimeout(() => {
