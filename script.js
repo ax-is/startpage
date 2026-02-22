@@ -366,12 +366,6 @@ function applyConfig() {
 
 let QUOTES = [
   "Pay attention to how your left hemisphere is letting go of the walls around you",
-  "Your testicles are now synchronized with your physical self",
-  "Be the reason why a stranger throws up today",
-  "It's never too late to summon demons",
-  "When the world ends, what we have strangled can't be unstrangled",
-  "Earth is just an angry child in denial of death",
-  "Murder is something that eats your soul for breakfast",
   "Never contextualize a Tyrannosaurus rex",
   "The two things you need in order to die happily are feelings and a bow and arrow",
   "There is no 'I' in 'human embryo'",
@@ -379,24 +373,25 @@ let QUOTES = [
   "Acid is awesome all the time, but so are you",
   "Get rid of everybody else",
   "Keep interrupting people",
-  "If you want to be loved, you have to try being ugly",
+  "If you want to be loved, you have to try being lovely",
   "Don't try to be popular. Be suspicious about modern medicine",
-  "Dare to believe in all negativity",
   "Cats have been invented to generate entertainment value",
   "Individuality feels horrible to politicians",
   "A corpse doesn't have to pay taxes",
   "Just because you're ugly doesn't mean you're not social",
   "Stop being a coward and start being a disappointment",
-  "A weird mother can often be turned into a funny boyfriend",
-  "As soon as you forget how to manipulate him, you forget how to entertain him",
-  "Have you ever tried simply giving up?",
   "\"Simplicity is the ultimate sophistication.\" — Leonardo da Vinci",
   "\"Know yourself and you will know the universe and the gods.\" — Socrates",
   "\"Clothes make the man. Naked people have little or no influence in society.\" — Mark Twain",
   "\"There are no facts, only interpretations.\" — Friedrich Nietzsche",
   "\"The code is more what you'd call 'guidelines' than actual rules\". — Captain Jack Sparrow",
   "\"You have power over your mind - not outside events. Realize this, and you will find strength.\" — Marcus Aurelius",
-  "\"I write differently from what I speak, I speak differently from what I think, I think differently from the way I ought to think, and so it all proceeds into deepest darkness.\" — Franz Kafka"
+  "\"I write differently from what I speak, I speak differently from what I think, I think differently from the way I ought to think, and so it all proceeds into deepest darkness.\" — Franz Kafka",
+  "\"We suffer more often in imagination than in reality.\" — Seneca",
+  "\"I am a cage, in search of a bird.\" — Franz Kafka",
+  "\"He who has a why to live for can bear almost any how.\" — Friedrich Nietzsche",
+  "\"In the midst of chaos, there is also opportunity.\" — Sun Tzu",
+  "\"It's not what happens to you, but how you react to it that matters.\" — Epictetus"
 ];
 
 let currentQuoteIndex = Math.floor(Math.random() * QUOTES.length);
