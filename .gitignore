@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+package-lock.json
+npm-debug.log
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Output / Build directories
+dist/
+build/
+out/

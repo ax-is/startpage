@@ -238,7 +238,8 @@ function autoSaveBookmarks() {
 function isValidUrl(url) {
   if (!url) return false;
   try {
-    new URL(url);
+    const validUrl = (url.startsWith('http://') || url.startsWith('https://')) ? url : 'https://' + url;
+    new URL(validUrl);
     return true;
   } catch (e) {
     return false;

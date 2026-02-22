@@ -153,6 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
     imgFilePicker.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
+
+      if (file.size > 2500000) {
+        showStatus('file too large (<2.5MB) ❌');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (evt) => {
         document.getElementById('backgroundImage').value = evt.target.result;
