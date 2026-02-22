@@ -624,8 +624,11 @@ function bookmarkMatches(bookmark, lowerQuery) {
 }
 
 let activeSuggestController = null;
+let currentSuggestId = 0;
 
 async function fetchSearchSuggestions(query) {
+  const reqId = ++currentSuggestId;
+
   if (activeSuggestController) activeSuggestController.abort();
   activeSuggestController = new AbortController();
 
@@ -634,9 +637,48 @@ async function fetchSearchSuggestions(query) {
       signal: activeSuggestController.signal
     });
     const data = await res.json();
+    if (currentSuggestId !== reqId) return [];
     return data[1] || [];
   } catch (e) {
-    return [];
+    if (e.name === 'AbortError') return [];
+
+    // JSONP Fallback for standard web (Vercel CORS bypass)
+    return new Promise((resolve) => {
+      const callbackName = `ddg_cb_${reqId}`;
+      const scriptId = `ddg_script_${reqId}`;
+
+      window[callbackName] = function (data) {
+        delete window[callbackName];
+        const scriptEl = document.getElementById(scriptId);
+        if (scriptEl) scriptEl.remove();
+
+        if (currentSuggestId !== reqId) {
+          resolve([]);
+          return;
+        }
+
+        if (data && Array.isArray(data)) {
+          resolve(data.map(item => item.phrase));
+        } else {
+          resolve([]);
+        }
+      };
+
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}&callback=${callbackName}`;
+
+      // Failsafe timeout
+      setTimeout(() => {
+        if (window[callbackName]) {
+          delete window[callbackName];
+          if (script.parentNode) script.remove();
+          if (currentSuggestId === reqId) resolve([]);
+        }
+      }, 3000);
+
+      document.body.appendChild(script);
+    });
   }
 }
 
