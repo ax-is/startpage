@@ -365,21 +365,8 @@ function applyConfig() {
 /* ---------- Greeting & Quotes ---------- */
 
 let QUOTES = [
-  "Pay attention to how your left hemisphere is letting go of the walls around you",
-  "Never contextualize a Tyrannosaurus rex",
-  "The two things you need in order to die happily are feelings and a bow and arrow",
-  "There is no 'I' in 'human embryo'",
-  "You are about to turn into a pig",
-  "Acid is awesome all the time, but so are you",
-  "Get rid of everybody else",
-  "Keep interrupting people",
-  "If you want to be loved, you have to try being lovely",
-  "Don't try to be popular. Be suspicious about modern medicine",
-  "Cats have been invented to generate entertainment value",
-  "Individuality feels horrible to politicians",
-  "A corpse doesn't have to pay taxes",
-  "Just because you're ugly doesn't mean you're not social",
-  "Stop being a coward and start being a disappointment",
+  "\"Pay attention to how your left hemisphere is letting go of the walls around you\" — Inspirobot",
+  "\"Acid is awesome all the time, but so are you\" — Inspirobot",
   "\"Simplicity is the ultimate sophistication.\" — Leonardo da Vinci",
   "\"Know yourself and you will know the universe and the gods.\" — Socrates",
   "\"Clothes make the man. Naked people have little or no influence in society.\" — Mark Twain",
@@ -391,7 +378,18 @@ let QUOTES = [
   "\"I am a cage, in search of a bird.\" — Franz Kafka",
   "\"He who has a why to live for can bear almost any how.\" — Friedrich Nietzsche",
   "\"In the midst of chaos, there is also opportunity.\" — Sun Tzu",
-  "\"It's not what happens to you, but how you react to it that matters.\" — Epictetus"
+  "\"It's not what happens to you, but how you react to it that matters.\" — Epictetus",
+  "\"The impediment to action advances action. What stands in the way becomes the way.\" — Marcus Aurelius",
+  "\"To go wrong in one's own way is better than to go right in someone else's.\" — Fyodor Dostoevsky",
+  "\"A ship in harbor is safe, but that is not what ships are built for.\" — John A. Shedd",
+  "\"Avoid silence, and you will achieve the past.\" — Inspirobot",
+  "\"Force yourself to loosen your body.\" — Inspirobot",
+  "\"Isn't it pleasing to observe how your ego is melting together with humanity itself?\" — Inspirobot",
+  "\"We're more ghosts than people.\" — Arthur Morgan",
+  "\"Take a gamble that love exists, and do a loving act.\" — Arthur Morgan",
+  "\"The greatest trick the devil ever pulled was convincing the world he didn't exist.\" — Verbal Kint",
+  "\"I know that I know nothing.\" — Socrates",
+  "\"Creativity takes courage.\" — Henri Matisse"
 ];
 
 let currentQuoteIndex = Math.floor(Math.random() * QUOTES.length);
