@@ -392,7 +392,50 @@ let QUOTES = [
   "\"Creativity takes courage.\" — Henri Matisse"
 ];
 
-let currentQuoteIndex = Math.floor(Math.random() * QUOTES.length);
+function getRandomQuoteIndex(length) {
+  if (length <= 1) return 0;
+
+  const interval = config.quoteInterval || DEFAULT_CONFIG.quoteInterval;
+
+  // "on refresh" mode: change every time, uses sessionStorage to avoid same-as-last
+  if (interval === 'refresh') {
+    let newIndex = Math.floor(Math.random() * length);
+    const lastIndex = sessionStorage.getItem('lastQuoteIndex');
+    if (lastIndex !== null && parseInt(lastIndex) === newIndex) {
+      newIndex = (newIndex + 1) % length;
+    }
+    sessionStorage.setItem('lastQuoteIndex', newIndex);
+    return newIndex;
+  }
+
+  // Timer modes: stay persistent until interval is up
+  if (interval !== 'none') {
+    const now = Date.now();
+    const stored = localStorage.getItem('persistentQuote');
+    const intervalMs = (parseInt(interval) || DEFAULT_CONFIG.quoteInterval) * 60000;
+
+    if (stored) {
+      try {
+        const { index, timestamp } = JSON.parse(stored);
+        // If the index is valid and we're within the interval, keep it
+        if (index < length && (now - timestamp) < intervalMs) {
+          return index;
+        }
+      } catch (e) {
+        console.warn("Failed to parse persistent quote", e);
+      }
+    }
+
+    // Pick new and store
+    const newIndex = Math.floor(Math.random() * length);
+    localStorage.setItem('persistentQuote', JSON.stringify({ index: newIndex, timestamp: now }));
+    return newIndex;
+  }
+
+  return Math.floor(Math.random() * length);
+}
+
+let currentQuoteIndex = 0; // Will be set in init/initQuotes
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -425,6 +468,15 @@ function showNextQuote() {
     el.textContent = QUOTES[currentQuoteIndex];
     el.classList.remove('fade-out');
     el.classList.add('fade-in');
+
+    // Update persistent storage so this manual/timer change sticks on refresh
+    const interval = config.quoteInterval || DEFAULT_CONFIG.quoteInterval;
+    if (interval !== 'none' && interval !== 'refresh') {
+      localStorage.setItem('persistentQuote', JSON.stringify({
+        index: currentQuoteIndex,
+        timestamp: Date.now()
+      }));
+    }
   }, 800);
 }
 
@@ -432,10 +484,41 @@ function initQuotes() {
   const el = document.getElementById('quote');
   if (!el) return;
 
+  const applyInitialQuote = () => {
+    currentQuoteIndex = getRandomQuoteIndex(QUOTES.length);
+    el.textContent = QUOTES[currentQuoteIndex];
+    el.classList.add('fade-in');
+
+    const interval = config.quoteInterval || DEFAULT_CONFIG.quoteInterval;
+
+    if (interval === 'none') {
+      el.textContent = '';
+      el.style.display = 'none';
+      const nextBtn = document.getElementById('next-quote-btn');
+      if (nextBtn) nextBtn.style.display = 'none';
+      if (quoteIntervalId) {
+        clearInterval(quoteIntervalId);
+        quoteIntervalId = null;
+      }
+      return;
+    } else {
+      el.style.display = '';
+      const nextBtn = document.getElementById('next-quote-btn');
+      if (nextBtn) nextBtn.style.display = '';
+    }
+
+    if (quoteIntervalId) clearInterval(quoteIntervalId);
+
+    // Only start timer if it's not "refresh" only
+    if (interval !== 'refresh') {
+      const minutes = parseInt(interval) || DEFAULT_CONFIG.quoteInterval;
+      quoteIntervalId = setInterval(showNextQuote, minutes * 60000);
+    }
+  };
+
   // Load custom quotes if available
   if (config.quoteFile) {
     try {
-      // Check if it's a Data URL (base64) or raw text
       if (config.quoteFile.startsWith('data:')) {
         fetch(config.quoteFile)
           .then(res => res.text())
@@ -443,62 +526,40 @@ function initQuotes() {
             const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
             if (lines.length > 0) {
               QUOTES = lines;
-              // Update display immediately
-              currentQuoteIndex = Math.floor(Math.random() * QUOTES.length);
-              el.textContent = QUOTES[currentQuoteIndex];
+              applyInitialQuote();
             }
           })
-          .catch(err => console.error('Failed to load quote file', err));
+          .catch(err => {
+            console.error('Failed to load quote file', err);
+            applyInitialQuote();
+          });
       } else {
-        // Assume it's raw text content if not a data URL (legacy or direct text)
         const lines = config.quoteFile.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         if (lines.length > 0) {
           QUOTES = lines;
-          currentQuoteIndex = Math.floor(Math.random() * QUOTES.length);
-          el.textContent = QUOTES[currentQuoteIndex];
-        } else {
-          // File was set but is empty or invalid? 
-          // If user explicitly set a file, we shouldn't show defaults?
-          // For now, let's just log it. 
-          console.log('Custom quote file is empty/invalid');
         }
+        applyInitialQuote();
       }
     } catch (e) {
       console.error('Invalid quote file data', e);
+      applyInitialQuote();
     }
-  }
-
-  if (config.quoteInterval === 'none') {
-    el.textContent = '';
-    el.style.display = 'none';
-    const nextBtn = document.getElementById('next-quote-btn');
-    if (nextBtn) nextBtn.style.display = 'none';
-    if (quoteIntervalId) {
-      clearInterval(quoteIntervalId);
-      quoteIntervalId = null;
-    }
-    return;
   } else {
-    el.style.display = '';
-    const nextBtn = document.getElementById('next-quote-btn');
-    if (nextBtn) nextBtn.style.display = '';
+    applyInitialQuote();
   }
-
-  el.textContent = QUOTES[currentQuoteIndex];
-  el.classList.add('fade-in');
-
-  if (quoteIntervalId) clearInterval(quoteIntervalId);
-  const minutes = parseInt(config.quoteInterval) || DEFAULT_CONFIG.quoteInterval;
-  quoteIntervalId = setInterval(showNextQuote, minutes * 60000);
 
   const nextBtn = document.getElementById('next-quote-btn');
   if (nextBtn) {
-    nextBtn.addEventListener('click', () => {
+    // Note: Event listener is added once, logic inside handles interval reset
+    nextBtn.onclick = () => {
       showNextQuote();
-      // Reset timer so it doesn't skip immediately after manual change
-      if (quoteIntervalId) clearInterval(quoteIntervalId);
-      quoteIntervalId = setInterval(showNextQuote, minutes * 60000);
-    });
+      const interval = config.quoteInterval || DEFAULT_CONFIG.quoteInterval;
+      if (quoteIntervalId && interval !== 'refresh') {
+        const minutes = parseInt(interval) || DEFAULT_CONFIG.quoteInterval;
+        clearInterval(quoteIntervalId);
+        quoteIntervalId = setInterval(showNextQuote, minutes * 60000);
+      }
+    };
   }
 }
 

@@ -18,6 +18,51 @@ const CONFIG_FIELDS = [
   'asciiSpeed'
 ];
 
+const THEMES = {
+  catppuccin: {
+    backgroundColor: '#1e1e2e',
+    textColor: '#cdd6f4',
+    textColor2: '#a6adc8',
+    accentColor: '#cba6f7',
+    asciiColor: '#cba6f7'
+  },
+  gruvbox: {
+    backgroundColor: '#282828',
+    textColor: '#ebdbb2',
+    textColor2: '#a89984',
+    accentColor: '#fabd2f',
+    asciiColor: '#fabd2f'
+  },
+  nord: {
+    backgroundColor: '#2e3440',
+    textColor: '#d8dee9',
+    textColor2: '#949fb1',
+    accentColor: '#88c0d0',
+    asciiColor: '#88c0d0'
+  },
+  dracula: {
+    backgroundColor: '#282a36',
+    textColor: '#f8f8f2',
+    textColor2: '#6272a4',
+    accentColor: '#bd93f9',
+    asciiColor: '#bd93f9'
+  },
+  tokyonight: {
+    backgroundColor: '#1a1b26',
+    textColor: '#c0caf5',
+    textColor2: '#7982a9',
+    accentColor: '#7aa2f7',
+    asciiColor: '#7aa2f7'
+  },
+  orbit: {
+    backgroundColor: '#0a0e1a',
+    textColor: '#e0e0e0',
+    textColor2: '#cccccc',
+    accentColor: '#4a9eff',
+    asciiColor: '#4a9eff'
+  }
+};
+
 
 function getConfigFromInputs() {
   const config = CONFIG_FIELDS.reduce((acc, field) => {
@@ -26,14 +71,17 @@ function getConfigFromInputs() {
     return acc;
   }, {});
 
-  // Handle quote interval
-  const select = document.getElementById('quoteIntervalSelect');
-  const custom = document.getElementById('quoteIntervalCustom');
-  if (select && select.value === 'custom' && custom) {
-    config.quoteInterval = custom.value || 30;
-  } else if (select) {
-    config.quoteInterval = select.value;
+  // Handle search engine
+  const searchSelect = document.getElementById('searchEngineSelect');
+  const searchInput = document.getElementById('searchEngine');
+  if (searchSelect && searchInput) {
+    if (searchSelect.value === 'custom') {
+      config.searchEngine = searchInput.value;
+    } else {
+      config.searchEngine = searchSelect.value;
+    }
   }
+
   return config;
 }
 
@@ -55,13 +103,31 @@ function setInputsFromConfig(config) {
   const custom = document.getElementById('quoteIntervalCustom');
 
   if (select && custom) {
-    if (['none', '15', '30', '60'].includes(String(interval))) {
+    if (['none', 'refresh', '15', '30', '60'].includes(String(interval))) {
       select.value = String(interval);
       custom.style.display = 'none';
     } else {
       select.value = 'custom';
       custom.value = interval;
       custom.style.display = 'block';
+    }
+  }
+
+  // Handle search engine inputs
+  const engine = config.searchEngine || 'https://www.google.com/search?q=';
+  const searchSelect = document.getElementById('searchEngineSelect');
+  const searchInput = document.getElementById('searchEngine');
+  const searchCustomRow = document.getElementById('customEngineRow');
+
+  if (searchSelect && searchInput && searchCustomRow) {
+    const options = Array.from(searchSelect.options).map(opt => opt.value);
+    if (options.includes(engine)) {
+      searchSelect.value = engine;
+      searchCustomRow.style.display = 'none';
+    } else {
+      searchSelect.value = 'custom';
+      searchInput.value = engine;
+      searchCustomRow.style.display = 'flex';
     }
   }
 
@@ -119,6 +185,12 @@ document.addEventListener('DOMContentLoaded', () => {
     element.addEventListener('input', () => {
       const config = getConfigFromInputs();
       applySharedTheme(config, 'config');
+
+      // If manually changing a color, set theme selector to custom
+      if (['backgroundColor', 'textColor', 'textColor2', 'accentColor', 'asciiColor'].includes(field)) {
+        const themeSelect = document.getElementById('themePresetSelect');
+        if (themeSelect) themeSelect.value = 'custom';
+      }
     });
     if (element.type === 'text') {
       element.addEventListener('focus', function () { this.select(); });
@@ -236,6 +308,43 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           custom.style.display = 'none';
         }
+      }
+    });
+  }
+
+  // Theme preset handler
+  const themeSelect = document.getElementById('themePresetSelect');
+  if (themeSelect) {
+    themeSelect.addEventListener('change', (e) => {
+      const theme = THEMES[e.target.value];
+      if (theme) {
+        Object.keys(theme).forEach(key => {
+          const el = document.getElementById(key);
+          if (el) el.value = theme[key];
+        });
+        const config = getConfigFromInputs();
+        applySharedTheme(config, 'config');
+      }
+    });
+  }
+
+  // Search engine handler
+  const engineSelect = document.getElementById('searchEngineSelect');
+  if (engineSelect) {
+    engineSelect.addEventListener('change', (e) => {
+      const customRow = document.getElementById('customEngineRow');
+      const input = document.getElementById('searchEngine');
+      if (customRow && input) {
+        if (e.target.value === 'custom') {
+          customRow.style.display = 'flex';
+          input.focus();
+        } else {
+          customRow.style.display = 'none';
+          input.value = e.target.value;
+        }
+        // Apply theme immediately to update engine logic in shared state
+        const config = getConfigFromInputs();
+        applySharedTheme(config, 'config');
       }
     });
   }
