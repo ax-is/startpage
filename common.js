@@ -3,6 +3,14 @@ const STORAGE_KEYS = {
   BOOKMARKS: 'startpageBookmarks'
 };
 
+function applySharedFavicon(iconKey) {
+  const iconSvg = ICONS[iconKey] || ICONS.saturn;
+  const favicon = document.querySelector('link[rel="icon"]');
+  if (favicon) {
+    favicon.href = `data:image/svg+xml,${iconSvg.replace(/'/g, '"')}`;
+  }
+}
+
 const DEFAULT_CONFIG = {
   backgroundColor: '#0a0e1a',
   textColor: '#e0e0e0',
@@ -22,7 +30,8 @@ const DEFAULT_CONFIG = {
   maskColor: '#000000',
   maskOpacity: 60,
   tabName: 'Orbit',
-  asciiSpeed: 50
+  asciiSpeed: 50,
+  tabIcon: 'saturn'
 };
 
 const DEFAULT_BOOKMARKS = [

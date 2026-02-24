@@ -15,7 +15,8 @@ const CONFIG_FIELDS = [
   'quoteFile',
   'quoteFileName',
   'tabName',
-  'asciiSpeed'
+  'asciiSpeed',
+  'tabIcon'
 ];
 
 const THEMES = {
@@ -152,6 +153,7 @@ async function loadSettings() {
     pickQuoteBtn.innerText = '✅ loaded';
   }
   applySharedTheme(config, 'config');
+  if (config.tabIcon) applySharedFavicon(config.tabIcon);
 }
 
 function showStatus(msg) {
@@ -191,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const themeSelect = document.getElementById('themePresetSelect');
         if (themeSelect) themeSelect.value = 'custom';
       }
+      if (field === 'tabIcon') applySharedFavicon(element.value);
     });
     if (element.type === 'text') {
       element.addEventListener('focus', function () { this.select(); });
