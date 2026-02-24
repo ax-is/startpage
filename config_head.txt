@@ -1,0 +1,25 @@
+﻿const CONFIG_FIELDS = [
+  'backgroundColor',
+  'textColor',
+  'textColor2',
+  'accentColor',
+  'searchEngine',
+  'backgroundImage',
+  'backgroundBlur',
+  'bgAnimation',
+  'asciiColor',
+  'asciiOpacity',
+  'userName',
+  'customGreeting',
+  'quoteInterval',
+  'quoteFile',
+  'quoteFileName',
+  'tabName',
+  'asciiSpeed',
+  'tabIcon'
+];
+
+const THEMES = {
+  catppuccin: {
+    backgroundColor: '#1e1e2e',
+    textColor: '#cdd6f4',

@@ -576,7 +576,7 @@ const commands = [
 ];
 
 const commandHandlers = {
-  ':config': () => { window.location.href = 'config.html'; },
+  ':config': () => { openConfig(); },
   ':bookmark': () => { window.location.href = 'bookmarks.html'; },
   ':help': () => { toggleHelp(); },
   ':list': async () => {
@@ -671,10 +671,35 @@ function importData() {
 
 /* ---------- Search & Filter ---------- */
 
+function calculateRelevanceScore(bookmark, query) {
+  const lowerQuery = query.toLowerCase();
+  const lowerName = bookmark.name.toLowerCase();
+  const lowerUrl = bookmark.url.toLowerCase();
+  let score = 0;
+
+  // Exact Name Match
+  if (lowerName === lowerQuery) score += 100;
+  // Name Starts With
+  else if (lowerName.startsWith(lowerQuery)) score += 80;
+  // Name Contains
+  else if (lowerName.includes(lowerQuery)) score += 60;
+
+  // Tag Matches
+  bookmark.tags.forEach(tag => {
+    const lowerTag = tag.toLowerCase();
+    if (lowerTag === lowerQuery) score += 90;
+    else if (lowerTag.startsWith(lowerQuery)) score += 70;
+    else if (lowerTag.includes(lowerQuery)) score += 50;
+  });
+
+  // URL Match
+  if (lowerUrl.includes(lowerQuery)) score += 40;
+
+  return score;
+}
+
 function bookmarkMatches(bookmark, lowerQuery) {
-  return bookmark.name.toLowerCase().includes(lowerQuery) ||
-    bookmark.url.toLowerCase().includes(lowerQuery) ||
-    bookmark.tags.some(tag => tag.toLowerCase().includes(lowerQuery));
+  return calculateRelevanceScore(bookmark, lowerQuery) > 0;
 }
 
 let activeSuggestController = null;
@@ -757,7 +782,13 @@ function filterBookmarks(query) {
 
   currentCommandSuggestions = [];
   currentSearchSuggestions = [];
-  filteredBookmarks = bookmarks.filter(b => bookmarkMatches(b, query.toLowerCase()));
+
+  // Filter and then sort by relevance score
+  filteredBookmarks = bookmarks
+    .map(b => ({ ...b, _score: calculateRelevanceScore(b, query) }))
+    .filter(b => b._score > 0)
+    .sort((a, b) => b._score - a._score);
+
   selectedIndex = 0;
 
   if (filteredBookmarks.length === 0 && !isUrl(query) && query.trim().length > 0) {
@@ -901,6 +932,21 @@ function renderCommandSuggestions(matched) {
   updateScrollFade();
 }
 
+function createSearchIcon() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '14');
+  svg.setAttribute('height', '14');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.classList.add('suggestion-icon');
+  svg.innerHTML = '<circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>';
+  return svg;
+}
+
 function renderSearchSuggestions(suggestions) {
   resultsContainer.innerHTML = '';
   if (suggestions.length === 0) { hideResultsBox(); return; }
@@ -911,7 +957,13 @@ function renderSearchSuggestions(suggestions) {
       searchInput.value = sug;
       window.location.href = (config.searchEngine || DEFAULT_CONFIG.searchEngine) + encodeURIComponent(sug);
     });
-    item.appendChild(createTextElement('bookmark-name', sug));
+
+    const content = document.createElement('div');
+    content.className = 'suggestion-content';
+    content.appendChild(createSearchIcon());
+    content.appendChild(createTextElement('bookmark-name', sug));
+
+    item.appendChild(content);
 
     // We optionally remove URL subtitle and tags to keep it clean.
 
@@ -1078,8 +1130,9 @@ function updateSmoothCaret() {
 document.addEventListener('keydown', (e) => {
   const focused = document.activeElement === searchInput;
   const noMod = !e.ctrlKey && !e.metaKey;
+  const isConfigOpen = document.getElementById('config-overlay')?.classList.contains('open');
 
-  if (!focused && noMod && !e.altKey && e.key.length === 1 && e.key !== ' ') {
+  if (!focused && noMod && !e.altKey && e.key.length === 1 && e.key !== ' ' && !isConfigOpen) {
     searchInput.focus();
     return;
   }
@@ -1186,6 +1239,14 @@ async function init() {
   updateGreeting();
   initQuotes();
 
+  // Clean the URL in the address bar (hide index.html and autofocus param)
+  try {
+    // Reverted to a safer version that keeps index.html so you can still reload
+    window.history.replaceState(null, '', 'index.html');
+  } catch (e) {
+    console.warn('URL cleanup failed:', e);
+  }
+
   // Aggressively attempt to focus the input area
   const focusSearch = () => {
     if (document.activeElement !== searchInput) {
@@ -1205,3 +1266,29 @@ async function init() {
 }
 
 init();
+
+
+// Config Overlay Logic
+function openConfig() {
+  document.getElementById('config-overlay')?.classList.add('open');
+  document.getElementById('toggleConfigBtn')?.classList.add('active');
+}
+function closeConfig() {
+  document.getElementById('config-overlay')?.classList.remove('open');
+  document.getElementById('toggleConfigBtn')?.classList.remove('active');
+}
+function toggleConfig() {
+  const overlay = document.getElementById('config-overlay');
+  const btn = document.getElementById('toggleConfigBtn');
+  const isOpen = overlay?.classList.toggle('open');
+  if (isOpen) btn?.classList.add('active');
+  else btn?.classList.remove('active');
+}
+
+document.getElementById('toggleConfigBtn')?.addEventListener('click', toggleConfig);
+document.getElementById('closeConfigBtn')?.addEventListener('click', closeConfig);
+
+window.addEventListener('configUpdated', (e) => {
+  config = e.detail;
+  applyConfig();
+});

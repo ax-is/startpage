@@ -31,7 +31,8 @@ const DEFAULT_CONFIG = {
   maskOpacity: 60,
   tabName: 'Orbit',
   asciiSpeed: 50,
-  tabIcon: 'saturn'
+  tabIcon: 'saturn',
+  autoHideSettings: false
 };
 
 const DEFAULT_BOOKMARKS = [
@@ -175,6 +176,12 @@ function applySharedTheme(config, pageType) {
     document.title = config.tabName;
   } else {
     document.title = 'Orbit';
+  }
+
+  if (config.autoHideSettings) {
+    document.body.classList.add('auto-hide-settings');
+  } else {
+    document.body.classList.remove('auto-hide-settings');
   }
 
   let bgStyleEl = document.getElementById('background-style');

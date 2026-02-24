@@ -92,9 +92,6 @@ body {
 .greeting-area {
   text-align: center;
   margin-bottom: 32px;
-  opacity: 0;
-  transform: translateY(10px);
-  animation: fadeUp 1s ease 0.3s forwards;
 }
 
 #greeting {
@@ -126,9 +123,6 @@ body {
 /* ---------- Search Bar ---------- */
 .search-area {
   position: relative;
-  opacity: 0;
-  transform: translateY(10px);
-  animation: fadeUp 1s ease 0.5s forwards;
 }
 
 #search-input {
@@ -200,9 +194,6 @@ body {
   min-height: 24px;
   /* padding-bottom: 30px; */
   /* Removed padding, using absolute positioning below */
-  opacity: 0;
-  transform: translateY(10px);
-  animation: fadeUp 1s ease 0.7s forwards;
 }
 
 #quote {
@@ -330,15 +321,56 @@ body {
   scrollbar-color: var(--color-border) transparent;
 }
 
-.invisible-settings-btn {
+.settings-toggle-btn {
   position: fixed;
-  top: 0;
-  right: 0;
-  width: 50px;
-  height: 50px;
-  z-index: 1000;
-  opacity: 0;
+  top: 25px;
+  right: 25px;
+  width: 64px;
+  height: 64px;
+  z-index: 9999;
+  opacity: 0.4;
+  background: rgba(255, 255, 255, 0.05) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+  outline: none !important;
+  color: var(--color-fg);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.settings-toggle-btn:hover {
+  opacity: 1 !important;
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--color-accent);
+}
+
+/* Hide settings icon */
+body.auto-hide-settings .settings-toggle-btn {
+  opacity: 0 !important;
+}
+
+body.auto-hide-settings .settings-toggle-btn:hover,
+body.auto-hide-settings .settings-toggle-btn.active {
+  opacity: 1 !important;
+}
+
+.settings-toggle-btn svg {
+  width: 40px;
+  height: 40px;
+  stroke: currentColor;
+  stroke-width: 2px;
+  transition: transform 0.3s ease, filter 0.2s ease;
+}
+
+.settings-toggle-btn.active svg {
+  transform: rotate(90deg);
 }
 
 #results::-webkit-scrollbar {
@@ -436,6 +468,25 @@ body {
   color: var(--color-fg);
   font-weight: 400;
   margin-bottom: 2px;
+}
+
+/* Search Suggestion Icons */
+.suggestion-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suggestion-icon {
+  color: var(--color-muted);
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.bookmark-item:hover .suggestion-icon,
+.bookmark-item.selected .suggestion-icon {
+  color: var(--color-accent);
+  opacity: 1;
 }
 
 .bookmark-url {
@@ -912,4 +963,314 @@ input.bookmark-tags {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-muted);
+}
+
+/* ---------- Config Overlay ---------- */
+.config-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 450px;
+  height: 100%;
+  background: var(--color-bg);
+  border-left: 1px solid var(--color-border);
+  z-index: 2000;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.config-overlay.open {
+  transform: translateX(0);
+}
+
+/* Base styles for cfg inside overlay */
+.config-overlay .cfg {
+  width: 100%;
+  padding: 24px 20px;
+  font-family: var(--font-mono);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-overlay .cfg>h1,
+.config-overlay .cfg>.btn-row,
+.config-overlay .cfg>.status {
+  width: 100%;
+}
+
+.config-overlay .cfg h1 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 0px;
+  color: var(--color-fg);
+  letter-spacing: 0.5px;
+}
+
+.config-overlay .close-btn {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--color-muted, #555);
+  transition: color 0.2s;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font-mono);
+  text-align: left;
+  padding: 0;
+}
+
+.config-overlay .close-btn:hover {
+  color: var(--color-fg);
+  box-shadow: none !important;
+}
+
+/* Sections */
+.config-overlay .section {
+  border: 1px solid var(--color-border, #1e1e2e);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 0;
+  background: var(--color-panel, rgba(255, 255, 255, 0.02));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.config-overlay .section-title {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--color-muted, #555);
+  margin-bottom: 10px;
+}
+
+.config-overlay .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.config-overlay .row:last-child {
+  margin-bottom: 0;
+}
+
+.config-overlay .row label {
+  font-size: 0.78rem;
+  color: var(--color-fg, #e0e0e0);
+  flex-shrink: 0;
+  width: 150px;
+}
+
+.config-overlay .row input[type="color"] {
+  width: 40px;
+  height: 24px;
+  border: 1px solid var(--color-border, #1e1e2e);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.config-overlay .row input[type="text"],
+.config-overlay .row select,
+.config-overlay .row input[type="number"] {
+  flex: 1;
+  margin-left: 12px;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-border, #1e1e2e);
+  border-radius: 4px;
+  color: var(--color-fg);
+  outline: none;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.config-overlay .row select option {
+  background: var(--color-bg, #0a0e1a);
+  color: var(--color-fg, #e0e0e0);
+  padding: 8px;
+}
+
+.config-overlay .row input[type="text"]:focus,
+.config-overlay .row select:focus,
+.config-overlay .row input[type="number"]:focus {
+  border-color: var(--color-accent, #4a9eff);
+}
+
+.config-overlay .slider-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.config-overlay .slider-row:last-child {
+  margin-bottom: 0;
+}
+
+.config-overlay .slider-row label {
+  font-size: 0.78rem;
+  color: var(--color-fg);
+  white-space: nowrap;
+  width: 150px;
+}
+
+.config-overlay .slider-row input[type="range"] {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.config-overlay .btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.config-overlay .btn-row button {
+  flex: 1;
+  padding: 9px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  border-radius: 5px;
+  border: 1px solid var(--color-border, #1e1e2e);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
+  color: var(--color-fg, #e0e0e0);
+}
+
+.config-overlay .btn-row .save {
+  background: var(--color-accent, #4a9eff);
+  border-color: var(--color-accent, #4a9eff);
+  color: #000;
+  font-weight: 600;
+}
+
+.config-overlay .btn-row .save:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 12px rgba(74, 158, 255, 0.3);
+}
+
+.config-overlay .btn-row .reset:hover {
+  border-color: #ff4a4a;
+  color: #ff4a4a;
+}
+
+.config-overlay .status {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--color-accent, #4a9eff);
+  min-height: 1em;
+  transition: opacity 0.3s;
+}
+
+.config-overlay .pick-btn {
+  margin-left: 6px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--color-border, #1e1e2e);
+  border-radius: 4px;
+  color: var(--color-fg, #e0e0e0);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.config-overlay .pick-btn:hover {
+  border-color: var(--color-accent, #4a9eff);
+  color: var(--color-accent, #4a9eff);
+}
+
+.config-overlay .clear-btn {
+  transition: all 0.2s;
+  background: none;
+  border: none;
+  color: var(--color-fg);
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.config-overlay .clear-btn:hover {
+  color: #ff4a4a !important;
+  text-shadow: 0 0 10px rgba(255, 74, 74, 0.6);
+  opacity: 1 !important;
+}
+
+/* Ensure the invisible settings btn sits behind overlay */
+.invisible-settings-btn {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  z-index: 1000;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+/* Switch Toggle Styles */
+.switch {
+  position: relative;
+  display: inline-block !important;
+  width: 40px !important;
+  height: 20px !important;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: .3s;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  top: 2px;
+  background-color: var(--color-muted);
+  transition: .3s;
+  border-radius: 50%;
+}
+
+input:checked+.slider {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+input:checked+.slider:before {
+  transform: translateX(20px);
+  background-color: #000;
 }

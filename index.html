@@ -9,7 +9,7 @@
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%234a9eff'/></svg>">
   <script src="icons.js"></script>
   <script src="theme-init.js"></script>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=20">
   <script src="focus.js"></script>
 </head>
 
@@ -18,7 +18,15 @@
   <pre id="globe" aria-hidden="true"></pre>
 
   <!-- Invisible Settings Button -->
-  <a href="config.html" class="invisible-settings-btn" title="Settings"></a>
+  <button id="toggleConfigBtn" class="settings-toggle-btn" title="Settings" aria-label="Toggle Settings">
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path
+        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+      </path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  </button>
 
   <!-- Main Content -->
   <div class="center-stage">
@@ -49,8 +57,181 @@
 
   </div>
 
+
+  <div id="config-overlay" class="config-overlay">
+    <div class="cfg">
+      <button class="close-btn" id="closeConfigBtn">← close</button>
+      <h1>settings</h1>
+
+      <!-- Colors -->
+      <div class="section">
+        <div class="section-title">themes & colors</div>
+        <div class="row">
+          <label>theme preset</label>
+          <select id="themePresetSelect" style="flex: 1;">
+            <option value="custom">-- custom --</option>
+            <option value="catppuccin">catppuccin mocha</option>
+            <option value="gruvbox">gruvbox dark</option>
+            <option value="nord">nord</option>
+            <option value="dracula">dracula</option>
+            <option value="tokyonight">tokyo night</option>
+            <option value="orbit">orbit (default)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>background</label>
+          <input type="color" id="backgroundColor" value="#0a0e1a">
+        </div>
+        <div class="row">
+          <label>text</label>
+          <input type="color" id="textColor" value="#e0e0e0">
+        </div>
+        <div class="row">
+          <label>text 2</label>
+          <input type="color" id="textColor2" value="#e0e0e0">
+        </div>
+        <div class="row">
+          <label>accent</label>
+          <input type="color" id="accentColor" value="#4a9eff">
+        </div>
+      </div>
+
+      <!-- ASCII -->
+      <div class="section">
+        <div class="section-title">ascii</div>
+        <div class="row">
+          <label>animation</label>
+          <select id="bgAnimation">
+            <option value="globe">🌍 globe</option>
+            <option value="donut">🍩 donut</option>
+            <option value="waves">🌊 waves</option>
+            <option value="matrix">🟢 matrix</option>
+            <option value="constellation">✨ constellation</option>
+            <option value="particles">🫧 particles</option>
+            <option value="none">⛔ none</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>color</label>
+          <input type="color" id="asciiColor" value="#4a9eff">
+        </div>
+        <div class="slider-row">
+          <label>opacity: <span id="opacityValue">40</span>%</label>
+          <input type="range" id="asciiOpacity" value="40" min="0" max="100" step="1">
+        </div>
+        <div class="slider-row">
+          <label>speed: <span id="speedValue">50</span>%</label>
+          <input type="range" id="asciiSpeed" value="50" min="0" max="200" step="1">
+        </div>
+      </div>
+
+      <!-- Background -->
+      <div class="section">
+        <div class="section-title">background</div>
+        <div class="row" style="align-items: center;">
+          <label>image</label>
+          <input type="text" id="backgroundImage" placeholder="url or pick file" value="">
+          <button type="button" class="pick-btn" id="pickImageBtn" style="margin-left: 8px;">📁 pick</button>
+          <button type="button" class="clear-btn" id="clearImageBtn" title="remove image"
+            style="margin-left: 8px; background: none; border: none; color: var(--color-fg); opacity: 0.6; cursor: pointer; padding: 4px;">✕</button>
+          <input type="file" id="imageFilePicker" accept="image/*" style="display:none">
+        </div>
+        <div class="slider-row">
+          <label>blur: <span id="blurValue">0</span>px</label>
+          <input type="range" id="backgroundBlur" value="0" min="0" max="20" step="1">
+        </div>
+      </div>
+
+      <!-- Greeting -->
+      <div class="section">
+        <div class="section-title">greeting</div>
+        <div class="row">
+          <label>name</label>
+          <input type="text" id="userName" placeholder="your name" value="axis">
+        </div>
+        <div class="row">
+          <label>greeting</label>
+          <input type="text" id="customGreeting" placeholder="Hello" value="">
+        </div>
+        <div class="row">
+          <label>tab name</label>
+          <input type="text" id="tabName" placeholder="tab name" value="Orbit">
+        </div>
+        <div class="row">
+          <label for="tabIcon">tab icon</label>
+          <select id="tabIcon" title="Choose tab icon" class="flex-select">
+            <option value="saturn">🪐 Saturn (Neo-Glass)</option>
+            <option value="blackhole">🕳️ Black Hole (Techno)</option>
+            <option value="supernova">💥 Supernova (Burst)</option>
+            <option value="folder">📁 New Tab (Fluent)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quotes -->
+      <div class="section">
+        <div class="section-title">quotes</div>
+        <div class="row" style="align-items: center;">
+          <label>file</label>
+          <input type="text" id="quoteFileNameInput" placeholder="no file selected" readonly
+            style="opacity: 0.7; cursor: default;">
+          <button type="button" class="pick-btn" id="pickQuoteBtn" style="margin-left: 8px;">📁 pick</button>
+          <button type="button" class="clear-btn" id="clearQuoteBtn" title="remove quotes"
+            style="margin-left: 8px; background: none; border: none; color: var(--color-fg); opacity: 0.6; cursor: pointer; padding: 4px;">✕</button>
+          <input type="file" id="quoteFilePicker" accept=".txt" style="display:none">
+        </div>
+        <div class="row">
+          <label>timer</label>
+          <div style="flex: 1; display: flex; gap: 8px; align-items: center; min-width: 0;">
+            <select id="quoteIntervalSelect" style="flex: 1;">
+              <option value="refresh">on refresh</option>
+              <option value="none">none</option>
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+              <option value="60">60 min</option>
+              <option value="custom">custom</option>
+            </select>
+            <input type="number" id="quoteIntervalCustom" placeholder="min" style="width: 50px; display: none;" min="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="section">
+        <div class="section-title">search</div>
+        <div class="row">
+          <label>engine</label>
+          <select id="searchEngineSelect" style="flex: 1;">
+            <option value="https://www.google.com/search?q=">google</option>
+            <option value="https://duckduckgo.com/?q=">duckduckgo</option>
+            <option value="https://www.startpage.com/do/search?query=">startpage</option>
+            <option value="custom">custom</option>
+          </select>
+        </div>
+        <div class="row" id="customEngineRow">
+          <label>custom url</label>
+          <input type="text" id="searchEngine" value="https://www.google.com/search?q=" placeholder="https://...?q=">
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="section">
+        <div class="section-title">features</div>
+        <div class="row"><label for="autoHideSettings">hide settings icon</label><label class="switch"><input
+              type="checkbox" id="autoHideSettings"><span class="slider round"></span></label></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="save" id="saveBtn">💾 save</button>
+        <button class="reset" id="resetBtn">↺ reset</button>
+      </div>
+      <div class="status" id="statusMsg"></div>
+    </div>
+  </div>
+
   <script src="common.js?v=5"></script>
   <script src="script.js?v=4"></script>
+  <script src="config.js?v=2"></script>
 </body>
 
 </html>

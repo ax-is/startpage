@@ -16,7 +16,8 @@ const CONFIG_FIELDS = [
   'quoteFileName',
   'tabName',
   'asciiSpeed',
-  'tabIcon'
+  'tabIcon',
+  'autoHideSettings'
 ];
 
 const THEMES = {
@@ -68,7 +69,13 @@ const THEMES = {
 function getConfigFromInputs() {
   const config = CONFIG_FIELDS.reduce((acc, field) => {
     const el = document.getElementById(field);
-    if (el) acc[field] = el.value;
+    if (el) {
+      if (el.type === 'checkbox') {
+        acc[field] = el.checked;
+      } else {
+        acc[field] = el.value;
+      }
+    }
     return acc;
   }, {});
 
@@ -95,7 +102,13 @@ function updateSliderValue(sliderId, valueId) {
 function setInputsFromConfig(config) {
   CONFIG_FIELDS.forEach(field => {
     const el = document.getElementById(field);
-    if (el && config[field] !== undefined) el.value = config[field] || '';
+    if (el && config[field] !== undefined) {
+      if (el.type === 'checkbox') {
+        el.checked = !!config[field];
+      } else {
+        el.value = config[field] || '';
+      }
+    }
   });
 
   // Handle quote interval inputs
@@ -152,7 +165,8 @@ async function loadSettings() {
   if (config.quoteFile && config.quoteFile.length > 0 && pickQuoteBtn) {
     pickQuoteBtn.innerText = '✅ loaded';
   }
-  applySharedTheme(config, 'config');
+  applySharedTheme(config, 'index');
+  window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
   if (config.tabIcon) applySharedFavicon(config.tabIcon);
 }
 
@@ -168,14 +182,16 @@ function showStatus(msg) {
 function saveSettings() {
   const config = getConfigFromInputs();
   saveSharedData(STORAGE_KEYS.CONFIG, config);
-  applySharedTheme(config, 'config');
+  applySharedTheme(config, 'index');
+  window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
   showStatus('settings saved ✓');
 }
 
 function resetSettings() {
   saveSharedData(STORAGE_KEYS.CONFIG, DEFAULT_CONFIG);
   setInputsFromConfig(DEFAULT_CONFIG);
-  applySharedTheme(DEFAULT_CONFIG, 'config');
+  applySharedTheme(DEFAULT_CONFIG, 'index');
+  window.dispatchEvent(new CustomEvent('configUpdated', { detail: DEFAULT_CONFIG }));
   showStatus('reset successful ↺');
 }
 
@@ -186,7 +202,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!element) return;
     element.addEventListener('input', () => {
       const config = getConfigFromInputs();
-      applySharedTheme(config, 'config');
+      applySharedTheme(config, 'index');
+      window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
 
       // If manually changing a color, set theme selector to custom
       if (['backgroundColor', 'textColor', 'textColor2', 'accentColor', 'asciiColor'].includes(field)) {
@@ -238,8 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.onload = (evt) => {
         document.getElementById('backgroundImage').value = evt.target.result;
         const config = getConfigFromInputs();
-        applySharedTheme(config, 'config');
+        applySharedTheme(config, 'index');
+        window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
         showStatus('image loaded ✓');
+        window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
       };
       reader.readAsDataURL(file);
     });
@@ -326,7 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (el) el.value = theme[key];
         });
         const config = getConfigFromInputs();
-        applySharedTheme(config, 'config');
+        applySharedTheme(config, 'index');
+        window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
       }
     });
   }
@@ -347,7 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Apply theme immediately to update engine logic in shared state
         const config = getConfigFromInputs();
-        applySharedTheme(config, 'config');
+        applySharedTheme(config, 'index');
+        window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
       }
     });
   }
