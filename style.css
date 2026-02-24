@@ -20,6 +20,8 @@
   --color-panel: rgba(255, 255, 255, 0.02);
   --color-input-bg: rgba(255, 255, 255, 0.04);
   --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --font-main: var(--font-mono);
+  --font-size-base: 14px;
   --glow-accent: 0 0 12px rgba(74, 158, 255, 0.15);
   --glow-accent-strong: 0 0 20px rgba(74, 158, 255, 0.3);
   --transition-speed: 0.3s;
@@ -29,6 +31,10 @@ html,
 body {
   height: 100%;
   overflow: hidden;
+}
+
+html {
+  font-size: var(--font-size-base, 14px);
 }
 
 body.auto-scroll {
@@ -44,7 +50,7 @@ body.auto-scroll {
 }
 
 body {
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
   background-color: var(--color-bg);
   color: var(--color-fg);
   -webkit-font-smoothing: antialiased;
@@ -132,7 +138,7 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--color-fg);
   font-size: 1.1rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
   font-weight: 300;
   padding: 12px 4px;
   outline: none;
@@ -146,7 +152,7 @@ body {
 .smooth-caret {
   position: absolute;
   width: 2px;
-  height: 1.3em;
+  height: 20px;
   background: var(--color-accent);
   border-radius: 1px;
   pointer-events: none;
@@ -240,8 +246,8 @@ body {
   font-size: 2rem;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.5s ease, transform 0.8s ease;
-  /* Slower transform for smooth rotation */
+  transition: opacity 0.5s ease, transform 0.3s ease;
+  /* Balanced transform for scale transition */
   padding: 0;
   margin: 0;
   z-index: 2;
@@ -265,8 +271,22 @@ body {
 
 .refresh-btn:hover {
   opacity: 1 !important;
-  transform: translateX(-50%) rotate(180deg) scale(1.1);
-  /* Rotate and scale on hover */
+  transform: translateX(-50%) scale(1.1);
+  /* Scale on hover, but don't rotate anymore */
+}
+
+@keyframes spin-refresh {
+  0% {
+    transform: translateX(-50%) rotate(0deg) scale(1.1);
+  }
+
+  100% {
+    transform: translateX(-50%) rotate(360deg) scale(1.1);
+  }
+}
+
+.refresh-btn.rotating {
+  animation: spin-refresh 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ---------- Icon Dock ---------- */
@@ -323,7 +343,7 @@ body {
 
 .settings-toggle-btn {
   position: fixed;
-  top: 25px;
+  bottom: 25px;
   right: 25px;
   width: 64px;
   height: 64px;
@@ -351,6 +371,11 @@ body {
   color: var(--color-accent);
 }
 
+.settings-toggle-btn:active {
+  transform: scale(0.95);
+  transition: transform 0.1s;
+}
+
 /* Hide settings icon */
 body.auto-hide-settings .settings-toggle-btn {
   opacity: 0 !important;
@@ -371,6 +396,76 @@ body.auto-hide-settings .settings-toggle-btn.active {
 
 .settings-toggle-btn.active svg {
   transform: rotate(90deg);
+}
+
+/* --- Icon Themes --- */
+body.icon-theme-original-colors .dock-icon {
+  opacity: 0.6;
+}
+
+body.icon-theme-original-colors .dock-icon:hover {
+  opacity: 1;
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 10px var(--brand-color, var(--color-accent))) !important;
+}
+
+/* --- Cyber Organic Theme --- */
+body.icon-theme-cyber-organic .dock-icon {
+  width: 42px;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  opacity: 0.7;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: organic-pulse 4s ease-in-out infinite alternate;
+}
+
+body.icon-theme-cyber-organic .dock-icon:hover {
+  opacity: 1;
+  transform: scale(1.1) translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 20px var(--glow-color, rgba(74, 158, 255, 0.4)),
+    inset 0 0 10px var(--glow-color, rgba(74, 158, 255, 0.2));
+  filter: drop-shadow(0 0 5px var(--color-accent));
+}
+
+@keyframes organic-pulse {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.02);
+  }
+
+  100% {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.05);
+  }
+}
+
+body.icon-theme-cyber-organic .dock-icon svg,
+body.icon-theme-cyber-organic .dock-icon img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+
+#clock-watermark {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-main);
+  font-size: 15vw;
+  font-weight: 200;
+  color: var(--color-fg);
+  opacity: 0.03;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  line-height: 1;
+  z-index: 0;
 }
 
 #results::-webkit-scrollbar {
@@ -464,6 +559,7 @@ body.auto-hide-settings .settings-toggle-btn.active {
 }
 
 .bookmark-name {
+  font-family: var(--font-main);
   font-size: 0.9rem;
   color: var(--color-fg);
   font-weight: 400;
@@ -490,6 +586,7 @@ body.auto-hide-settings .settings-toggle-btn.active {
 }
 
 .bookmark-url {
+  font-family: var(--font-main);
   font-size: 0.75rem;
   color: var(--color-muted);
   font-weight: 300;
@@ -695,7 +792,7 @@ select {
   background-color: var(--color-input-bg);
   border: 1px solid var(--color-border);
   color: var(--color-fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
   font-size: 0.9rem;
   border-radius: 4px;
   transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
@@ -750,7 +847,7 @@ button {
   background-color: transparent;
   border: 1px solid var(--color-accent);
   color: var(--color-accent);
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
   font-size: 0.85rem;
   cursor: pointer;
   border-radius: 4px;
@@ -971,7 +1068,7 @@ input.bookmark-tags {
   top: 0;
   right: 0;
   width: 100%;
-  max-width: 450px;
+  max-width: 400px;
   height: 100%;
   background: var(--color-bg);
   border-left: 1px solid var(--color-border);
@@ -980,6 +1077,7 @@ input.bookmark-tags {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
   box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  font-size: 14px !important;
 }
 
 .config-overlay.open {
@@ -990,7 +1088,7 @@ input.bookmark-tags {
 .config-overlay .cfg {
   width: 100%;
   padding: 24px 20px;
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1003,29 +1101,11 @@ input.bookmark-tags {
 }
 
 .config-overlay .cfg h1 {
-  font-size: 1.1rem;
+  font-size: 1.1em;
   font-weight: 500;
   margin-bottom: 0px;
   color: var(--color-fg);
   letter-spacing: 0.5px;
-}
-
-.config-overlay .close-btn {
-  display: inline-block;
-  font-size: 0.75rem;
-  color: var(--color-muted, #555);
-  transition: color 0.2s;
-  cursor: pointer;
-  background: none;
-  border: none;
-  font-family: var(--font-mono);
-  text-align: left;
-  padding: 0;
-}
-
-.config-overlay .close-btn:hover {
-  color: var(--color-fg);
-  box-shadow: none !important;
 }
 
 /* Sections */
@@ -1041,7 +1121,7 @@ input.bookmark-tags {
 }
 
 .config-overlay .section-title {
-  font-size: 0.65rem;
+  font-size: 0.65em;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: var(--color-muted, #555);
@@ -1060,10 +1140,10 @@ input.bookmark-tags {
 }
 
 .config-overlay .row label {
-  font-size: 0.78rem;
+  font-size: 0.78em;
   color: var(--color-fg, #e0e0e0);
   flex-shrink: 0;
-  width: 150px;
+  width: 140px;
 }
 
 .config-overlay .row input[type="color"] {
@@ -1082,8 +1162,8 @@ input.bookmark-tags {
   flex: 1;
   margin-left: 12px;
   padding: 5px 8px;
-  font-size: 0.78rem;
-  font-family: var(--font-mono);
+  font-size: 0.78em;
+  font-family: var(--font-main);
   background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--color-border, #1e1e2e);
   border-radius: 4px;
@@ -1118,10 +1198,10 @@ input.bookmark-tags {
 }
 
 .config-overlay .slider-row label {
-  font-size: 0.78rem;
+  font-size: 0.78em;
   color: var(--color-fg);
   white-space: nowrap;
-  width: 150px;
+  width: 140px;
 }
 
 .config-overlay .slider-row input[type="range"] {
@@ -1138,8 +1218,8 @@ input.bookmark-tags {
 .config-overlay .btn-row button {
   flex: 1;
   padding: 9px;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-family: var(--font-main);
+  font-size: 0.8em;
   border-radius: 5px;
   border: 1px solid var(--color-border, #1e1e2e);
   cursor: pointer;
@@ -1168,7 +1248,7 @@ input.bookmark-tags {
 .config-overlay .status {
   text-align: center;
   margin-top: 8px;
-  font-size: 0.72rem;
+  font-size: 0.72em;
   color: var(--color-accent, #4a9eff);
   min-height: 1em;
   transition: opacity 0.3s;
@@ -1177,8 +1257,8 @@ input.bookmark-tags {
 .config-overlay .pick-btn {
   margin-left: 6px;
   padding: 5px 10px;
-  font-size: 0.72rem;
-  font-family: var(--font-mono);
+  font-size: 0.72em;
+  font-family: var(--font-main);
   background: var(--color-input-bg, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--color-border, #1e1e2e);
   border-radius: 4px;
@@ -1201,6 +1281,7 @@ input.bookmark-tags {
   opacity: 0.6;
   cursor: pointer;
   padding: 4px;
+  font-size: 14px;
 }
 
 .config-overlay .clear-btn:hover {

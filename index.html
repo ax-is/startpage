@@ -30,7 +30,7 @@
 
   <!-- Main Content -->
   <div class="center-stage">
-
+    <div id="clock-watermark"></div>
     <div class="greeting-area">
       <span id="greeting">good evening,</span>
       <span id="username">axis</span>
@@ -60,7 +60,6 @@
 
   <div id="config-overlay" class="config-overlay">
     <div class="cfg">
-      <button class="close-btn" id="closeConfigBtn">← close</button>
       <h1>settings</h1>
 
       <!-- Colors -->
@@ -133,12 +132,32 @@
           <input type="text" id="backgroundImage" placeholder="url or pick file" value="">
           <button type="button" class="pick-btn" id="pickImageBtn" style="margin-left: 8px;">📁 pick</button>
           <button type="button" class="clear-btn" id="clearImageBtn" title="remove image"
-            style="margin-left: 8px; background: none; border: none; color: var(--color-fg); opacity: 0.6; cursor: pointer; padding: 4px;">✕</button>
+            style="margin-left: 8px;">✕</button>
           <input type="file" id="imageFilePicker" accept="image/*" style="display:none">
         </div>
         <div class="slider-row">
           <label>blur: <span id="blurValue">0</span>px</label>
           <input type="range" id="backgroundBlur" value="0" min="0" max="20" step="1">
+        </div>
+        <div class="slider-row">
+          <label>brightness: <span id="brightnessValue">100</span>%</label>
+          <input type="range" id="backgroundBrightness" value="100" min="0" max="100" step="1">
+        </div>
+      </div>
+
+      <!-- Typography -->
+      <div class="section">
+        <div class="section-title">typography</div>
+        <div class="row">
+          <label>font family</label>
+          <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="fontFamily" placeholder="'JetBrains Mono', Arial" style="flex: 1;">
+            <button type="button" class="pick-btn" id="applyFontBtn" title="Apply Font Changes">✓</button>
+          </div>
+        </div>
+        <div class="slider-row">
+          <label>font size: <span id="fontSizeDisplay">14</span>px</label>
+          <input type="range" id="baseFontSize" value="14" min="10" max="32" step="1">
         </div>
       </div>
 
@@ -177,7 +196,7 @@
             style="opacity: 0.7; cursor: default;">
           <button type="button" class="pick-btn" id="pickQuoteBtn" style="margin-left: 8px;">📁 pick</button>
           <button type="button" class="clear-btn" id="clearQuoteBtn" title="remove quotes"
-            style="margin-left: 8px; background: none; border: none; color: var(--color-fg); opacity: 0.6; cursor: pointer; padding: 4px;">✕</button>
+            style="margin-left: 8px;">✕</button>
           <input type="file" id="quoteFilePicker" accept=".txt" style="display:none">
         </div>
         <div class="row">
@@ -194,6 +213,13 @@
             <input type="number" id="quoteIntervalCustom" placeholder="min" style="width: 50px; display: none;" min="1">
           </div>
         </div>
+        <div class="row">
+          <label>show quotes</label>
+          <label class="switch">
+            <input type="checkbox" id="showQuotes">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
 
       <!-- Search -->
@@ -201,7 +227,7 @@
         <div class="section-title">search</div>
         <div class="row">
           <label>engine</label>
-          <select id="searchEngineSelect" style="flex: 1;">
+          <select id="searchEngineSelect" style="flex: 1;" title="Choose search engine">
             <option value="https://www.google.com/search?q=">google</option>
             <option value="https://duckduckgo.com/?q=">duckduckgo</option>
             <option value="https://www.startpage.com/do/search?query=">startpage</option>
@@ -212,13 +238,38 @@
           <label>custom url</label>
           <input type="text" id="searchEngine" value="https://www.google.com/search?q=" placeholder="https://...?q=">
         </div>
+        <div class="row">
+          <label>placeholder</label>
+          <input type="text" id="searchPlaceholder" placeholder="search or type : commands" value="">
+        </div>
       </div>
 
       <!-- Features -->
       <div class="section">
-        <div class="section-title">features</div>
-        <div class="row"><label for="autoHideSettings">hide settings icon</label><label class="switch"><input
-              type="checkbox" id="autoHideSettings"><span class="slider round"></span></label></div>
+        <div class="section-title">icons</div>
+        <div class="row">
+          <label>icon theme</label>
+          <select id="iconTheme" style="flex: 1;" title="Choose icon theme">
+            <option value="accent-glow">accent glow</option>
+            <option value="original-colors">original colors</option>
+            <option value="frosted-orbit">frosted orbit</option>
+            <option value="cyber-organic">cyber organic</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>show clock</label>
+          <label class="switch">
+            <input type="checkbox" id="showClock">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="row">
+          <label>auto hide settings</label>
+          <label class="switch">
+            <input type="checkbox" id="autoHideSettings">
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
 
       <div class="btn-row">

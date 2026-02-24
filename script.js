@@ -360,6 +360,11 @@ function applyConfig() {
 
   updateGreeting();
   Animations.start(config.bgAnimation || DEFAULT_CONFIG.bgAnimation);
+
+  // Apply icon theme classes
+  document.body.classList.remove('icon-theme-accent-glow', 'icon-theme-original-colors', 'icon-theme-frosted-orbit');
+  const theme = config.iconTheme || 'accent-glow';
+  document.body.classList.add(`icon-theme-${theme}`);
 }
 
 /* ---------- Greeting & Quotes ---------- */
@@ -550,8 +555,20 @@ function initQuotes() {
 
   const nextBtn = document.getElementById('next-quote-btn');
   if (nextBtn) {
-    // Note: Event listener is added once, logic inside handles interval reset
     nextBtn.onclick = () => {
+      // Add rotation animation class
+      nextBtn.classList.add('rotating');
+
+      // Cleanup class after animation completes (matching CSS duration)
+      nextBtn.addEventListener('animationend', () => {
+        nextBtn.style.transition = 'none';
+        nextBtn.classList.remove('rotating');
+        // Force reflow or wait a frame
+        setTimeout(() => {
+          nextBtn.style.transition = '';
+        }, 10);
+      }, { once: true });
+
       showNextQuote();
       const interval = config.quoteInterval || DEFAULT_CONFIG.quoteInterval;
       if (quoteIntervalId && interval !== 'refresh') {
@@ -886,6 +903,15 @@ function renderIconDock() {
     link.title = bm.name;
 
     const slug = getIconSlugForUrl(bm.url);
+    const brandColor = ICON_BRAND_COLORS[slug];
+    const currentTheme = config.iconTheme || 'accent-glow';
+
+    if (brandColor) {
+      link.style.setProperty('--brand-color', brandColor);
+      if (currentTheme === 'original-colors' || currentTheme === 'frosted-orbit') {
+        link.style.color = brandColor;
+      }
+    }
 
     // Fetch raw SVG from Simple Icons unpkg CDN
     fetch(`https://unpkg.com/simple-icons@v11/icons/${slug}.svg`)
@@ -905,7 +931,7 @@ function renderIconDock() {
         } catch (e) {
           // Fallback 2: Site initials
           const initial = bm.name ? bm.name.trim().charAt(0).toUpperCase() : '?';
-          link.innerHTML = `<span style="font-weight: 700; font-size: 24px; font-family: var(--font-primary, sans-serif);">${initial}</span>`;
+          link.innerHTML = `<span style="font-weight: 700; font-size: 24px; font-family: var(--font-main);">${initial}</span>`;
         }
       });
 
@@ -1233,11 +1259,22 @@ window.addEventListener('storage', (e) => {
 
 /* ---------- Init ---------- */
 
+function updateClock() {
+  const clockEl = document.getElementById('clock-watermark');
+  if (!clockEl) return;
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  clockEl.textContent = `${hours}:${minutes}`;
+}
+
 async function init() {
   await loadData();
   applyConfig();
   updateGreeting();
   initQuotes();
+  updateClock();
+  setInterval(updateClock, 10000); // Update every 10s
 
   // Clean the URL in the address bar (hide index.html and autofocus param)
   try {
@@ -1286,9 +1323,9 @@ function toggleConfig() {
 }
 
 document.getElementById('toggleConfigBtn')?.addEventListener('click', toggleConfig);
-document.getElementById('closeConfigBtn')?.addEventListener('click', closeConfig);
 
 window.addEventListener('configUpdated', (e) => {
   config = e.detail;
   applyConfig();
+  renderIconDock();
 });

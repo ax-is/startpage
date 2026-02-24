@@ -3,11 +3,36 @@ const STORAGE_KEYS = {
   BOOKMARKS: 'startpageBookmarks'
 };
 
+const ICON_BRAND_COLORS = {
+  github: '#ffffff',
+  youtube: '#FF0000',
+  google: '#4285F4',
+  reddit: '#FF4500',
+  twitter: '#1DA1F2',
+  x: '#ffffff',
+  openai: '#74aa9c',
+  googlegemini: '#8E75FF',
+  gmail: '#EA4335',
+  discord: '#5865F2',
+  spotify: '#1DB954',
+  instagram: '#E4405F',
+  facebook: '#1877F2',
+  linkedin: '#0A66C2',
+  amazon: '#FF9900',
+  netflix: '#E50914',
+  steam: '#00ADEE',
+  twitch: '#9146FF',
+  pinterest: '#BD081C',
+  whatsapp: '#25D366'
+};
+
 function applySharedFavicon(iconKey) {
   const iconSvg = ICONS[iconKey] || ICONS.saturn;
   const favicon = document.querySelector('link[rel="icon"]');
   if (favicon) {
-    favicon.href = `data:image/svg+xml,${iconSvg.replace(/'/g, '"')}`;
+    // Better encoding for data: URI
+    const encoded = encodeURIComponent(iconSvg.replace(/'/g, '"'));
+    favicon.href = `data:image/svg+xml,${encoded}`;
   }
 }
 
@@ -23,7 +48,7 @@ const DEFAULT_CONFIG = {
   asciiOpacity: 12,
   userName: 'axis',
   customGreeting: '',
-  textColor2: '#cccccc',
+  textColor2: '#e0e0e0',
   quoteInterval: 30,
   quoteFile: '',
   quoteFileName: '',
@@ -32,7 +57,14 @@ const DEFAULT_CONFIG = {
   tabName: 'Orbit',
   asciiSpeed: 50,
   tabIcon: 'saturn',
-  autoHideSettings: false
+  autoHideSettings: false,
+  iconTheme: 'accent-glow',
+  fontFamily: "'JetBrains Mono', monospace",
+  baseFontSize: 14,
+  searchPlaceholder: '',
+  showQuotes: true,
+  showClock: true,
+  backgroundBrightness: 100
 };
 
 const DEFAULT_BOOKMARKS = [
@@ -156,10 +188,17 @@ function removeSharedData(key) {
 }
 
 function hexToRgba(hex, alpha) {
-  if (!hex || hex.length < 7) return `rgba(74, 158, 255, ${alpha})`;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  if (!hex || hex.length < 4) return `rgba(74, 158, 255, ${alpha})`;
+  let r, g, b;
+  if (hex.length === 4) { // #RGB
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else { // #RRGGBB
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+  }
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
@@ -169,6 +208,21 @@ function applySharedTheme(config, pageType) {
   root.style.setProperty('--color-fg', config.textColor);
   root.style.setProperty('--color-accent', config.accentColor);
 
+  // Apply typography variables if present
+  const fontValue = config.fontFamily && config.fontFamily.trim() !== ''
+    ? config.fontFamily
+    : DEFAULT_CONFIG.fontFamily;
+
+  // Use a fallback stack in the variable itself so mid-typing (invalid fonts) doesn't break the UI
+  root.style.setProperty('--font-main', `${fontValue}, ${DEFAULT_CONFIG.fontFamily}`);
+
+  // Font size only scales on index page dashboard
+  if (pageType === 'index' && config.baseFontSize) {
+    root.style.setProperty('--font-size-base', config.baseFontSize + 'px');
+  } else {
+    root.style.setProperty('--font-size-base', '14px');
+  }
+
   document.body.style.backgroundColor = config.backgroundColor;
   document.body.style.color = config.textColor;
 
@@ -176,6 +230,18 @@ function applySharedTheme(config, pageType) {
     document.title = config.tabName;
   } else {
     document.title = 'Orbit';
+  }
+
+  const sInput = document.getElementById('search-input');
+  if (sInput) {
+    sInput.placeholder = config.searchPlaceholder && config.searchPlaceholder.trim() !== ''
+      ? config.searchPlaceholder
+      : 'search or type : for commands';
+  }
+
+  const clockEl = document.getElementById('clock-watermark');
+  if (clockEl) {
+    clockEl.style.display = config.showClock !== false ? 'block' : 'none';
   }
 
   if (config.autoHideSettings) {
@@ -198,9 +264,17 @@ function applySharedTheme(config, pageType) {
     return;
   }
 
+  const quoteArea = document.querySelector('.quote-area');
+  if (quoteArea) {
+    quoteArea.style.display = config.showQuotes !== false ? 'block' : 'none';
+  }
+
   if (config.backgroundImage) {
     const blur = config.backgroundBlur || 0;
-    const filterValue = blur > 0 ? `blur(${blur}px)` : 'none';
+    const brightness = config.backgroundBrightness !== undefined ? config.backgroundBrightness : 100;
+    const filterValue = (blur > 0 || brightness !== 100)
+      ? `blur(${blur}px) brightness(${brightness}%)`
+      : 'none';
 
     if (!bgStyleEl) {
       bgStyleEl = document.createElement('style');
@@ -229,12 +303,14 @@ function applySharedTheme(config, pageType) {
         bgOverlayEl.id = 'bg-overlay';
         document.head.appendChild(bgOverlayEl);
       }
+      const maskColor = config.maskColor || '#000000';
+      const maskOpacity = (config.maskOpacity !== undefined ? config.maskOpacity : 55) / 100;
       bgOverlayEl.textContent = `
         body::after {
           content: '';
           position: fixed;
           top: 0; left: 0; width: 100%; height: 100%;
-          background: rgba(0, 0, 0, 0.55);
+          background: ${hexToRgba(maskColor, maskOpacity)};
           z-index: -1;
           pointer-events: none;
         }

@@ -17,7 +17,13 @@ const CONFIG_FIELDS = [
   'tabName',
   'asciiSpeed',
   'tabIcon',
-  'autoHideSettings'
+  'autoHideSettings',
+  'iconTheme',
+  'fontFamily',
+  'baseFontSize',
+  'showQuotes',
+  'showClock',
+  'backgroundBrightness'
 ];
 
 const THEMES = {
@@ -152,8 +158,10 @@ function setInputsFromConfig(config) {
   }
 
   updateSliderValue('backgroundBlur', 'blurValue');
+  updateSliderValue('backgroundBrightness', 'brightnessValue');
   updateSliderValue('asciiOpacity', 'opacityValue');
   updateSliderValue('asciiSpeed', 'speedValue');
+  updateSliderValue('baseFontSize', 'fontSizeDisplay');
 }
 
 async function loadSettings() {
@@ -201,6 +209,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const element = document.getElementById(field);
     if (!element) return;
     element.addEventListener('input', () => {
+      // Don't auto-save font family while typing
+      if (field === 'fontFamily') return;
+
       const config = getConfigFromInputs();
       applySharedTheme(config, 'index');
       window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
@@ -214,17 +225,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     if (element.type === 'text') {
       element.addEventListener('focus', function () { this.select(); });
+      // Also prevent change event for fontFamily from auto-saving
+      if (field === 'fontFamily') {
+        element.addEventListener('change', (e) => e.stopImmediatePropagation());
+      }
     }
   });
 
   const blurSlider = document.getElementById('backgroundBlur');
   if (blurSlider) blurSlider.addEventListener('input', () => updateSliderValue('backgroundBlur', 'blurValue'));
 
+  const brightnessSlider = document.getElementById('backgroundBrightness');
+  if (brightnessSlider) brightnessSlider.addEventListener('input', () => updateSliderValue('backgroundBrightness', 'brightnessValue'));
+
   const opacSlider = document.getElementById('asciiOpacity');
   if (opacSlider) opacSlider.addEventListener('input', () => updateSliderValue('asciiOpacity', 'opacityValue'));
 
   const speedSlider = document.getElementById('asciiSpeed');
   if (speedSlider) speedSlider.addEventListener('input', () => updateSliderValue('asciiSpeed', 'speedValue'));
+
+  const fontSizeSlider = document.getElementById('baseFontSize');
+  if (fontSizeSlider) fontSizeSlider.addEventListener('input', () => updateSliderValue('baseFontSize', 'fontSizeDisplay'));
+
+  const applyFontBtn = document.getElementById('applyFontBtn');
+  const fontFamilyInput = document.getElementById('fontFamily');
+  if (applyFontBtn && fontFamilyInput) {
+    applyFontBtn.addEventListener('click', async () => {
+      const newFont = fontFamilyInput.value;
+      const data = await loadSharedData();
+      data.config.fontFamily = newFont;
+
+      // Save and Apply
+      await saveSharedData(data.config);
+      applySharedTheme(data.config, 'index');
+
+      const status = document.getElementById('configStatus');
+      if (status) {
+        status.textContent = 'font applied';
+        status.style.opacity = '1';
+        setTimeout(() => status.style.opacity = '0', 1500);
+      }
+    });
+  }
 
   const saveBtn = document.getElementById('saveBtn');
   if (saveBtn) saveBtn.addEventListener('click', saveSettings);
