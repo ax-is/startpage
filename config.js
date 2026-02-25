@@ -23,7 +23,11 @@ const CONFIG_FIELDS = [
   'baseFontSize',
   'showQuotes',
   'showClock',
-  'backgroundBrightness'
+  'backgroundBrightness',
+  'maskOpacity',
+  'searchPlaceholder',
+  'searchOpacity',
+  'searchBlur'
 ];
 
 const THEMES = {
@@ -68,6 +72,13 @@ const THEMES = {
     textColor2: '#cccccc',
     accentColor: '#4a9eff',
     asciiColor: '#4a9eff'
+  },
+  peppermint: {
+    backgroundColor: '#05100d',
+    textColor: '#e0f0e8',
+    textColor2: '#b0d0c0',
+    accentColor: '#43ffaf',
+    asciiColor: '#43ffaf'
   }
 };
 
@@ -161,6 +172,8 @@ function setInputsFromConfig(config) {
   updateSliderValue('backgroundBrightness', 'brightnessValue');
   updateSliderValue('asciiOpacity', 'opacityValue');
   updateSliderValue('asciiSpeed', 'speedValue');
+  updateSliderValue('searchOpacity', 'searchOpacityValue');
+  updateSliderValue('searchBlur', 'searchBlurValue');
   updateSliderValue('baseFontSize', 'fontSizeDisplay');
 }
 
@@ -244,6 +257,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const speedSlider = document.getElementById('asciiSpeed');
   if (speedSlider) speedSlider.addEventListener('input', () => updateSliderValue('asciiSpeed', 'speedValue'));
 
+  const sOpacitySlider = document.getElementById('searchOpacity');
+  if (sOpacitySlider) {
+    sOpacitySlider.addEventListener('input', () => {
+      updateSliderValue('searchOpacity', 'searchOpacityValue');
+      saveSettings();
+    });
+  }
+
+  const sBlurSlider = document.getElementById('searchBlur');
+  if (sBlurSlider) {
+    sBlurSlider.addEventListener('input', () => {
+      updateSliderValue('searchBlur', 'searchBlurValue');
+      saveSettings();
+    });
+  }
+
   const fontSizeSlider = document.getElementById('baseFontSize');
   if (fontSizeSlider) fontSizeSlider.addEventListener('input', () => updateSliderValue('baseFontSize', 'fontSizeDisplay'));
 
@@ -300,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
         applySharedTheme(config, 'index');
         window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
         showStatus('image loaded ✓');
-        window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
       };
       reader.readAsDataURL(file);
     });

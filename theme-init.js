@@ -25,10 +25,10 @@ try {
 
     // Apply Favicon ASAP if ICONS is loaded
     if (config.tabIcon && typeof ICONS !== 'undefined') {
-      const iconSvg = ICONS[config.tabIcon];
+      const iconSvg = ICONS[config.tabIcon] || ICONS.saturn;
       const favicon = document.querySelector('link[rel="icon"]');
       if (favicon && iconSvg) {
-        const encoded = encodeURIComponent(iconSvg.replace(/'/g, '"'));
+        const encoded = encodeURIComponent(iconSvg);
         favicon.href = `data:image/svg+xml,${encoded}`;
       }
     }

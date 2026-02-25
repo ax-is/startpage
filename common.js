@@ -31,7 +31,7 @@ function applySharedFavicon(iconKey) {
   const favicon = document.querySelector('link[rel="icon"]');
   if (favicon) {
     // Better encoding for data: URI
-    const encoded = encodeURIComponent(iconSvg.replace(/'/g, '"'));
+    const encoded = encodeURIComponent(iconSvg);
     favicon.href = `data:image/svg+xml,${encoded}`;
   }
 }
@@ -61,10 +61,12 @@ const DEFAULT_CONFIG = {
   iconTheme: 'accent-glow',
   fontFamily: "'JetBrains Mono', monospace",
   baseFontSize: 14,
-  searchPlaceholder: '',
+  searchPlaceholder: null,
   showQuotes: true,
   showClock: true,
-  backgroundBrightness: 100
+  backgroundBrightness: 100,
+  searchOpacity: 0,
+  searchBlur: 0
 };
 
 const DEFAULT_BOOKMARKS = [
@@ -234,9 +236,10 @@ function applySharedTheme(config, pageType) {
 
   const sInput = document.getElementById('search-input');
   if (sInput) {
-    sInput.placeholder = config.searchPlaceholder && config.searchPlaceholder.trim() !== ''
+    const placeholderValue = (config.searchPlaceholder !== undefined && config.searchPlaceholder !== null)
       ? config.searchPlaceholder
       : 'search or type : for commands';
+    sInput.placeholder = placeholderValue;
   }
 
   const clockEl = document.getElementById('clock-watermark');

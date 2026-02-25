@@ -327,8 +327,10 @@ function applyConfig() {
       --color-accent: ${color};
       --glow-accent: 0 0 12px ${hexToRgba(color, 0.15)};
       --glow-accent-strong: 0 0 20px ${hexToRgba(color, 0.3)};
+      --search-bg-opacity: ${(config.searchOpacity !== undefined ? config.searchOpacity : DEFAULT_CONFIG.searchOpacity) / 100};
+      --search-blur: ${(config.searchBlur !== undefined ? config.searchBlur : DEFAULT_CONFIG.searchBlur)}px;
     }
-    #globe { color: ${config.asciiColor || color}; opacity: ${(parseInt(config.asciiOpacity) || DEFAULT_CONFIG.asciiOpacity) / 100}; }
+    #globe { color: ${config.asciiColor || color}; opacity: ${(parseFloat(config.asciiOpacity !== undefined ? config.asciiOpacity : DEFAULT_CONFIG.asciiOpacity)) / 100}; }
     #username { text-shadow: 0 0 30px ${hexToRgba(color, 0.15)}; }
     #greeting { color: ${config.textColor2 || DEFAULT_CONFIG.textColor2}; }
     #quote { color: ${config.textColor2 || DEFAULT_CONFIG.textColor2}; }
@@ -362,7 +364,7 @@ function applyConfig() {
   Animations.start(config.bgAnimation || DEFAULT_CONFIG.bgAnimation);
 
   // Apply icon theme classes
-  document.body.classList.remove('icon-theme-accent-glow', 'icon-theme-original-colors', 'icon-theme-frosted-orbit');
+  document.body.classList.remove('icon-theme-accent-glow', 'icon-theme-original-colors', 'icon-theme-frosted-orbit', 'icon-theme-cyber-organic', 'icon-theme-favicons-only');
   const theme = config.iconTheme || 'accent-glow';
   document.body.classList.add(`icon-theme-${theme}`);
 }
@@ -908,32 +910,46 @@ function renderIconDock() {
 
     if (brandColor) {
       link.style.setProperty('--brand-color', brandColor);
-      if (currentTheme === 'original-colors' || currentTheme === 'frosted-orbit') {
+      if (currentTheme === 'original-colors' || currentTheme === 'frosted-orbit' || currentTheme === 'cyber-organic') {
         link.style.color = brandColor;
+      } else if (currentTheme === 'accent-glow') {
+        link.style.color = 'var(--color-accent)';
       }
+    } else if (currentTheme === 'accent-glow') {
+      link.style.color = 'var(--color-accent)';
     }
 
     // Fetch raw SVG from Simple Icons unpkg CDN
-    fetch(`https://unpkg.com/simple-icons@v11/icons/${slug}.svg`)
-      .then(res => {
-        if (!res.ok) throw new Error('Icon not found');
-        return res.text();
-      })
-      .then(svgText => {
-        link.innerHTML = svgText;
-      })
-      .catch(err => {
-        // Fallback 1: Google Favicon API
-        try {
-          const validUrl = (bm.url.startsWith('http://') || bm.url.startsWith('https://')) ? bm.url : 'https://' + bm.url;
-          const hostname = new URL(validUrl).hostname;
-          link.innerHTML = `<img src="https://www.google.com/s2/favicons?domain=${hostname}&sz=64" alt="${bm.name}" style="width: 24px; height: 24px; border-radius: 4px; transition: transform 0.2s;">`;
-        } catch (e) {
-          // Fallback 2: Site initials
-          const initial = bm.name ? bm.name.trim().charAt(0).toUpperCase() : '?';
-          link.innerHTML = `<span style="font-weight: 700; font-size: 24px; font-family: var(--font-main);">${initial}</span>`;
-        }
-      });
+    const skipSvg = currentTheme === 'favicons-only';
+
+    if (skipSvg) {
+      applyFallback();
+    } else {
+      fetch(`https://unpkg.com/simple-icons@v11/icons/${slug}.svg`)
+        .then(res => {
+          if (!res.ok) throw new Error('Icon not found');
+          return res.text();
+        })
+        .then(svgText => {
+          link.innerHTML = svgText;
+        })
+        .catch(err => {
+          applyFallback();
+        });
+    }
+
+    function applyFallback() {
+      // Fallback 1: Google Favicon API
+      try {
+        const validUrl = (bm.url.startsWith('http://') || bm.url.startsWith('https://')) ? bm.url : 'https://' + bm.url;
+        const hostname = new URL(validUrl).hostname;
+        link.innerHTML = `<img src="https://www.google.com/s2/favicons?domain=${hostname}&sz=64" alt="${bm.name}" style="width: 24px; height: 24px; border-radius: 4px; transition: transform 0.2s;">`;
+      } catch (e) {
+        // Fallback 2: Site initials
+        const initial = bm.name ? bm.name.trim().charAt(0).toUpperCase() : '?';
+        link.innerHTML = `<span style="font-weight: 700; font-size: 24px; font-family: var(--font-main);">${initial}</span>`;
+      }
+    }
 
     iconDock.appendChild(link);
   });

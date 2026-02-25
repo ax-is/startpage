@@ -129,6 +129,11 @@ body {
 /* ---------- Search Bar ---------- */
 .search-area {
   position: relative;
+  background: rgba(0, 0, 0, var(--search-bg-opacity));
+  backdrop-filter: blur(var(--search-blur));
+  -webkit-backdrop-filter: blur(var(--search-blur));
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
 #search-input {
@@ -311,6 +316,35 @@ body {
   justify-content: center;
 }
 
+.dock-icon img {
+  filter: grayscale(1) brightness(1.5);
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+
+body.icon-theme-accent-glow .dock-icon img {
+  /* In accent glow, we tint the image slightly red/accent if possible or just keep it grayscale */
+  filter: grayscale(1) sepia(1) hue-rotate(-50deg) saturate(5);
+  /* Rough red tint fallback */
+}
+
+body.icon-theme-favicons-only .dock-icon img {
+  filter: none !important;
+  opacity: 1 !important;
+  transform: none;
+}
+
+body.icon-theme-favicons-only .dock-icon {
+  opacity: 1;
+}
+
+body.icon-theme-favicons-only .dock-icon:hover {
+  filter: none !important;
+  box-shadow: none !important;
+  transform: scale(1.1);
+  /* Keep a slight scale but no glow */
+}
+
 .dock-icon svg {
   width: 26px;
   height: 26px;
@@ -409,6 +443,29 @@ body.icon-theme-original-colors .dock-icon:hover {
   filter: drop-shadow(0 0 10px var(--brand-color, var(--color-accent))) !important;
 }
 
+/* --- Frosted Orbit Theme --- */
+body.icon-theme-frosted-orbit .dock-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  padding: 10px;
+  opacity: 0.6;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+body.icon-theme-frosted-orbit .dock-icon:hover {
+  opacity: 1;
+  transform: scale(1.1) translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--brand-color, var(--color-accent));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  filter: none !important;
+}
+
 /* --- Cyber Organic Theme --- */
 body.icon-theme-cyber-organic .dock-icon {
   width: 42px;
@@ -426,10 +483,10 @@ body.icon-theme-cyber-organic .dock-icon:hover {
   opacity: 1;
   transform: scale(1.1) translateY(-2px);
   background: rgba(255, 255, 255, 0.08);
-  border-color: var(--color-accent);
-  box-shadow: 0 0 20px var(--glow-color, rgba(74, 158, 255, 0.4)),
-    inset 0 0 10px var(--glow-color, rgba(74, 158, 255, 0.2));
-  filter: drop-shadow(0 0 5px var(--color-accent));
+  border-color: var(--brand-color, var(--color-accent)) !important;
+  box-shadow: 0 0 20px var(--brand-color, rgba(74, 158, 255, 0.4)),
+    inset 0 0 10px var(--brand-color, rgba(74, 158, 255, 0.2)) !important;
+  filter: drop-shadow(0 0 8px var(--brand-color, var(--color-accent))) !important;
 }
 
 @keyframes organic-pulse {
