@@ -1,474 +1,491 @@
-const CONFIG_FIELDS = [
-  'backgroundColor',
-  'textColor',
-  'textColor2',
-  'accentColor',
-  'searchEngine',
-  'backgroundImage',
-  'backgroundBlur',
-  'bgAnimation',
-  'asciiColor',
-  'asciiOpacity',
-  'userName',
-  'customGreeting',
-  'quoteInterval',
-  'quoteFile',
-  'quoteFileName',
-  'tabName',
-  'asciiSpeed',
-  'tabIcon',
-  'autoHideSettings',
-  'iconTheme',
-  'fontFamily',
-  'baseFontSize',
-  'showQuotes',
-  'showClock',
-  'backgroundBrightness',
-  'maskOpacity',
-  'searchPlaceholder',
-  'searchOpacity',
-  'searchBlur'
-];
+(function () {
+  // Derived from DEFAULT_CONFIG so it always stays in sync — never edit this manually.
+  const CONFIG_FIELDS = Object.keys(DEFAULT_CONFIG);
 
-const THEMES = {
-  catppuccin: {
-    backgroundColor: '#1e1e2e',
-    textColor: '#cdd6f4',
-    textColor2: '#a6adc8',
-    accentColor: '#cba6f7',
-    asciiColor: '#cba6f7'
-  },
-  gruvbox: {
-    backgroundColor: '#282828',
-    textColor: '#ebdbb2',
-    textColor2: '#a89984',
-    accentColor: '#fabd2f',
-    asciiColor: '#fabd2f'
-  },
-  nord: {
-    backgroundColor: '#2e3440',
-    textColor: '#d8dee9',
-    textColor2: '#949fb1',
-    accentColor: '#88c0d0',
-    asciiColor: '#88c0d0'
-  },
-  dracula: {
-    backgroundColor: '#282a36',
-    textColor: '#f8f8f2',
-    textColor2: '#6272a4',
-    accentColor: '#bd93f9',
-    asciiColor: '#bd93f9'
-  },
-  tokyonight: {
-    backgroundColor: '#1a1b26',
-    textColor: '#c0caf5',
-    textColor2: '#7982a9',
-    accentColor: '#7aa2f7',
-    asciiColor: '#7aa2f7'
-  },
-  orbit: {
-    backgroundColor: '#0a0e1a',
-    textColor: '#e0e0e0',
-    textColor2: '#cccccc',
-    accentColor: '#4a9eff',
-    asciiColor: '#4a9eff'
-  },
-  peppermint: {
-    backgroundColor: '#05100d',
-    textColor: '#e0f0e8',
-    textColor2: '#b0d0c0',
-    accentColor: '#43ffaf',
-    asciiColor: '#43ffaf'
+  const THEMES = {
+    catppuccin: {
+      backgroundColor: '#1e1e2e',
+      textColor: '#cdd6f4',
+      textColor2: '#a6adc8',
+      accentColor: '#cba6f7',
+      asciiColor: '#cba6f7'
+    },
+    gruvbox: {
+      backgroundColor: '#282828',
+      textColor: '#ebdbb2',
+      textColor2: '#a89984',
+      accentColor: '#fabd2f',
+      asciiColor: '#fabd2f'
+    },
+    nord: {
+      backgroundColor: '#2e3440',
+      textColor: '#d8dee9',
+      textColor2: '#949fb1',
+      accentColor: '#88c0d0',
+      asciiColor: '#88c0d0'
+    },
+    dracula: {
+      backgroundColor: '#282a36',
+      textColor: '#f8f8f2',
+      textColor2: '#6272a4',
+      accentColor: '#bd93f9',
+      asciiColor: '#bd93f9'
+    },
+    tokyonight: {
+      backgroundColor: '#1a1b26',
+      textColor: '#c0caf5',
+      textColor2: '#7982a9',
+      accentColor: '#7aa2f7',
+      asciiColor: '#7aa2f7'
+    },
+    orbit: {
+      backgroundColor: '#0a0e1a',
+      textColor: '#e0e0e0',
+      textColor2: '#cccccc',
+      accentColor: '#4a9eff',
+      asciiColor: '#4a9eff'
+    },
+    peppermint: {
+      backgroundColor: '#05100d',
+      textColor: '#e0f0e8',
+      textColor2: '#b0d0c0',
+      accentColor: '#43ffaf',
+      asciiColor: '#43ffaf'
+    }
+  };
+
+
+  // Cache of DOM elements for each config field — populated once on first use.
+  let _configElementCache = null;
+  function getConfigElements() {
+    if (!_configElementCache) {
+      _configElementCache = {};
+      CONFIG_FIELDS.forEach(field => {
+        const el = document.getElementById(field);
+        if (el) _configElementCache[field] = el;
+      });
+    }
+    return _configElementCache;
   }
-};
 
+  function getConfigFromInputs() {
+    const elements = getConfigElements();
+    const config = CONFIG_FIELDS.reduce((acc, field) => {
+      const el = elements[field];
+      if (el) {
+        if (el.type === 'checkbox') {
+          acc[field] = el.checked;
+        } else {
+          acc[field] = el.value;
+        }
+      }
+      return acc;
+    }, {});
 
-function getConfigFromInputs() {
-  const config = CONFIG_FIELDS.reduce((acc, field) => {
-    const el = document.getElementById(field);
+    // Handle quote interval (select + optional custom input)
+    const qtiSelect = document.getElementById('quoteIntervalSelect');
+    const qtiCustom = document.getElementById('quoteIntervalCustom');
+    if (qtiSelect) {
+      if (qtiSelect.value === 'custom' && qtiCustom) {
+        config.quoteInterval = qtiCustom.value;
+      } else {
+        config.quoteInterval = qtiSelect.value;
+      }
+    }
+
+    // Handle search engine (select + optional custom input)
+    const searchSelect = document.getElementById('searchEngineSelect');
+    const searchInput = document.getElementById('searchEngine');
+    if (searchSelect && searchInput) {
+      if (searchSelect.value === 'custom') {
+        config.searchEngine = searchInput.value;
+      } else {
+        config.searchEngine = searchSelect.value;
+      }
+    }
+
+    return config;
+  }
+
+  function updateSliderValue(sliderId, valueId) {
+    const slider = document.getElementById(sliderId);
+    const valueDisplay = document.getElementById(valueId);
+    if (slider && valueDisplay) valueDisplay.textContent = slider.value;
+  }
+
+  function setInputsFromConfig(config) {
+    CONFIG_FIELDS.forEach(field => {
+      const el = document.getElementById(field);
+      if (el && config[field] !== undefined) {
+        if (el.type === 'checkbox') {
+          el.checked = !!config[field];
+        } else {
+          el.value = config[field] || '';
+        }
+      }
+    });
+
+    // Handle quote interval inputs
+    const interval = config.quoteInterval || 30;
+    const select = document.getElementById('quoteIntervalSelect');
+    const custom = document.getElementById('quoteIntervalCustom');
+
+    if (select && custom) {
+      if (['none', 'refresh', '15', '30', '60'].includes(String(interval))) {
+        select.value = String(interval);
+        custom.style.display = 'none';
+      } else {
+        select.value = 'custom';
+        custom.value = interval;
+        custom.style.display = 'block';
+      }
+    }
+
+    // Handle search engine inputs
+    const engine = config.searchEngine || 'https://www.google.com/search?q=';
+    const searchSelect = document.getElementById('searchEngineSelect');
+    const searchInput = document.getElementById('searchEngine');
+    const searchCustomRow = document.getElementById('customEngineRow');
+
+    if (searchSelect && searchInput && searchCustomRow) {
+      const options = Array.from(searchSelect.options).map(opt => opt.value);
+      if (options.includes(engine)) {
+        searchSelect.value = engine;
+        searchCustomRow.style.display = 'none';
+      } else {
+        searchSelect.value = 'custom';
+        searchInput.value = engine;
+        searchCustomRow.style.display = 'flex';
+      }
+    }
+
+    // Update quote file name display
+    const quoteFileNameSpan = document.getElementById('quoteFileName');
+    if (quoteFileNameSpan && config.quoteFileName) {
+      quoteFileNameSpan.textContent = config.quoteFileName;
+    }
+
+    updateSliderValue('backgroundBlur', 'blurValue');
+    updateSliderValue('backgroundBrightness', 'brightnessValue');
+    updateSliderValue('asciiOpacity', 'opacityValue');
+    updateSliderValue('asciiSpeed', 'speedValue');
+    updateSliderValue('searchOpacity', 'searchOpacityValue');
+    updateSliderValue('searchBlur', 'searchBlurValue');
+    updateSliderValue('baseFontSize', 'fontSizeDisplay');
+  }
+
+  async function loadSettings() {
+    const data = await loadSharedData();
+    const config = data.config;
+    setInputsFromConfig(config);
+
+    const pickQuoteBtn = document.getElementById('pickQuoteBtn');
+    if (config.quoteFile && config.quoteFile.length > 0 && pickQuoteBtn) {
+      pickQuoteBtn.innerText = '✅ loaded';
+    }
+    applySharedTheme(config, 'index');
+    window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
+    if (config.tabIcon) applySharedFavicon(config.tabIcon);
+  }
+
+  function showStatus(msg) {
+    const el = document.getElementById('statusMsg');
     if (el) {
-      if (el.type === 'checkbox') {
-        acc[field] = el.checked;
-      } else {
-        acc[field] = el.value;
-      }
-    }
-    return acc;
-  }, {});
-
-  // Handle search engine
-  const searchSelect = document.getElementById('searchEngineSelect');
-  const searchInput = document.getElementById('searchEngine');
-  if (searchSelect && searchInput) {
-    if (searchSelect.value === 'custom') {
-      config.searchEngine = searchInput.value;
-    } else {
-      config.searchEngine = searchSelect.value;
+      el.textContent = msg;
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.opacity = '0'; }, 2500);
     }
   }
 
-  return config;
-}
-
-function updateSliderValue(sliderId, valueId) {
-  const slider = document.getElementById(sliderId);
-  const valueDisplay = document.getElementById(valueId);
-  if (slider && valueDisplay) valueDisplay.textContent = slider.value;
-}
-
-function setInputsFromConfig(config) {
-  CONFIG_FIELDS.forEach(field => {
-    const el = document.getElementById(field);
-    if (el && config[field] !== undefined) {
-      if (el.type === 'checkbox') {
-        el.checked = !!config[field];
-      } else {
-        el.value = config[field] || '';
-      }
-    }
-  });
-
-  // Handle quote interval inputs
-  const interval = config.quoteInterval || 30;
-  const select = document.getElementById('quoteIntervalSelect');
-  const custom = document.getElementById('quoteIntervalCustom');
-
-  if (select && custom) {
-    if (['none', 'refresh', '15', '30', '60'].includes(String(interval))) {
-      select.value = String(interval);
-      custom.style.display = 'none';
-    } else {
-      select.value = 'custom';
-      custom.value = interval;
-      custom.style.display = 'block';
-    }
-  }
-
-  // Handle search engine inputs
-  const engine = config.searchEngine || 'https://www.google.com/search?q=';
-  const searchSelect = document.getElementById('searchEngineSelect');
-  const searchInput = document.getElementById('searchEngine');
-  const searchCustomRow = document.getElementById('customEngineRow');
-
-  if (searchSelect && searchInput && searchCustomRow) {
-    const options = Array.from(searchSelect.options).map(opt => opt.value);
-    if (options.includes(engine)) {
-      searchSelect.value = engine;
-      searchCustomRow.style.display = 'none';
-    } else {
-      searchSelect.value = 'custom';
-      searchInput.value = engine;
-      searchCustomRow.style.display = 'flex';
-    }
-  }
-
-  // Update quote file name display
-  const quoteFileNameSpan = document.getElementById('quoteFileName');
-  if (quoteFileNameSpan && config.quoteFileName) {
-    quoteFileNameSpan.textContent = config.quoteFileName;
-  }
-
-  updateSliderValue('backgroundBlur', 'blurValue');
-  updateSliderValue('backgroundBrightness', 'brightnessValue');
-  updateSliderValue('asciiOpacity', 'opacityValue');
-  updateSliderValue('asciiSpeed', 'speedValue');
-  updateSliderValue('searchOpacity', 'searchOpacityValue');
-  updateSliderValue('searchBlur', 'searchBlurValue');
-  updateSliderValue('baseFontSize', 'fontSizeDisplay');
-}
-
-async function loadSettings() {
-  const data = await loadSharedData();
-  const config = data.config;
-  setInputsFromConfig(config);
-
-  const pickQuoteBtn = document.getElementById('pickQuoteBtn');
-  if (config.quoteFile && config.quoteFile.length > 0 && pickQuoteBtn) {
-    pickQuoteBtn.innerText = '✅ loaded';
-  }
-  applySharedTheme(config, 'index');
-  window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
-  if (config.tabIcon) applySharedFavicon(config.tabIcon);
-}
-
-function showStatus(msg) {
-  const el = document.getElementById('statusMsg');
-  if (el) {
-    el.textContent = msg;
-    el.style.opacity = '1';
-    setTimeout(() => { el.style.opacity = '0'; }, 2500);
-  }
-}
-
-function saveSettings() {
-  const config = getConfigFromInputs();
-  saveSharedData(STORAGE_KEYS.CONFIG, config);
-  applySharedTheme(config, 'index');
-  window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
-  showStatus('settings saved ✓');
-}
-
-function resetSettings() {
-  saveSharedData(STORAGE_KEYS.CONFIG, DEFAULT_CONFIG);
-  setInputsFromConfig(DEFAULT_CONFIG);
-  applySharedTheme(DEFAULT_CONFIG, 'index');
-  window.dispatchEvent(new CustomEvent('configUpdated', { detail: DEFAULT_CONFIG }));
-  showStatus('reset successful ↺');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-
-  CONFIG_FIELDS.forEach(field => {
-    const element = document.getElementById(field);
-    if (!element) return;
-    element.addEventListener('input', () => {
-      // Don't auto-save font family while typing
-      if (field === 'fontFamily') return;
-
+  function saveSettings(isAuto = false) {
+    try {
       const config = getConfigFromInputs();
+      saveSharedData(STORAGE_KEYS.CONFIG, config);
       applySharedTheme(config, 'index');
       window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
 
-      // If manually changing a color, set theme selector to custom
-      if (['backgroundColor', 'textColor', 'textColor2', 'accentColor', 'asciiColor'].includes(field)) {
-        const themeSelect = document.getElementById('themePresetSelect');
-        if (themeSelect) themeSelect.value = 'custom';
+      if (!isAuto) {
+        showStatus('settings saved ✓');
+        setTimeout(() => {
+          const status = document.getElementById('statusMsg');
+          if (status) status.style.opacity = '0';
+        }, 2000);
       }
-      if (field === 'tabIcon') applySharedFavicon(element.value);
-    });
-    if (element.type === 'text') {
-      element.addEventListener('focus', function () { this.select(); });
-      // Also prevent change event for fontFamily from auto-saving
-      if (field === 'fontFamily') {
-        element.addEventListener('change', (e) => e.stopImmediatePropagation());
-      }
+    } catch (e) {
+      console.error('saveSettings failed:', e);
+      if (!isAuto) showStatus('save failed ❌');
     }
-  });
-
-  const blurSlider = document.getElementById('backgroundBlur');
-  if (blurSlider) blurSlider.addEventListener('input', () => updateSliderValue('backgroundBlur', 'blurValue'));
-
-  const brightnessSlider = document.getElementById('backgroundBrightness');
-  if (brightnessSlider) brightnessSlider.addEventListener('input', () => updateSliderValue('backgroundBrightness', 'brightnessValue'));
-
-  const opacSlider = document.getElementById('asciiOpacity');
-  if (opacSlider) opacSlider.addEventListener('input', () => updateSliderValue('asciiOpacity', 'opacityValue'));
-
-  const speedSlider = document.getElementById('asciiSpeed');
-  if (speedSlider) speedSlider.addEventListener('input', () => updateSliderValue('asciiSpeed', 'speedValue'));
-
-  const sOpacitySlider = document.getElementById('searchOpacity');
-  if (sOpacitySlider) {
-    sOpacitySlider.addEventListener('input', () => {
-      updateSliderValue('searchOpacity', 'searchOpacityValue');
-      saveSettings();
-    });
   }
 
-  const sBlurSlider = document.getElementById('searchBlur');
-  if (sBlurSlider) {
-    sBlurSlider.addEventListener('input', () => {
-      updateSliderValue('searchBlur', 'searchBlurValue');
-      saveSettings();
-    });
+  function resetSettings() {
+    saveSharedData(STORAGE_KEYS.CONFIG, DEFAULT_CONFIG);
+    setInputsFromConfig(DEFAULT_CONFIG);
+    applySharedTheme(DEFAULT_CONFIG, 'index');
+    window.dispatchEvent(new CustomEvent('configUpdated', { detail: DEFAULT_CONFIG }));
+    showStatus('reset successful ↺');
   }
 
-  const fontSizeSlider = document.getElementById('baseFontSize');
-  if (fontSizeSlider) fontSizeSlider.addEventListener('input', () => updateSliderValue('baseFontSize', 'fontSizeDisplay'));
-
-  const applyFontBtn = document.getElementById('applyFontBtn');
-  const fontFamilyInput = document.getElementById('fontFamily');
-  if (applyFontBtn && fontFamilyInput) {
-    applyFontBtn.addEventListener('click', async () => {
-      const newFont = fontFamilyInput.value;
-      const data = await loadSharedData();
-      data.config.fontFamily = newFont;
-
-      // Save and Apply
-      await saveSharedData(data.config);
-      applySharedTheme(data.config, 'index');
-
-      const status = document.getElementById('configStatus');
-      if (status) {
-        status.textContent = 'font applied';
-        status.style.opacity = '1';
-        setTimeout(() => status.style.opacity = '0', 1500);
-      }
-    });
+  // Helper to prevent excessive storage writes during rapid input
+  let saveDebounceTimer = null;
+  function debouncedSave() {
+    if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = setTimeout(() => {
+      saveSettings(true); // Silent save
+    }, 400);
   }
 
-  const saveBtn = document.getElementById('saveBtn');
-  if (saveBtn) saveBtn.addEventListener('click', saveSettings);
+  document.addEventListener('DOMContentLoaded', () => {
 
-  const rtBtn = document.getElementById('resetBtn');
-  if (rtBtn) rtBtn.addEventListener('click', resetSettings);
+    CONFIG_FIELDS.forEach(field => {
+      const element = document.getElementById(field);
+      if (!element) return;
 
-  // Image file picker
-  const pickImgBtn = document.getElementById('pickImageBtn');
-  if (pickImgBtn) {
-    pickImgBtn.addEventListener('click', () => {
-      document.getElementById('imageFilePicker').click();
-    });
-  }
-
-  const imgFilePicker = document.getElementById('imageFilePicker');
-  if (imgFilePicker) {
-    imgFilePicker.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      if (file.size > 2500000) {
-        showStatus('file too large (<2.5MB) ❌');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        document.getElementById('backgroundImage').value = evt.target.result;
+      // Use 'input' for immediate feedback, 'change' for final value
+      element.addEventListener('input', () => {
         const config = getConfigFromInputs();
         applySharedTheme(config, 'index');
         window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
-        showStatus('image loaded ✓');
-      };
-      reader.readAsDataURL(file);
+
+        // If manually changing a color, set theme selector to custom
+        if (['backgroundColor', 'textColor', 'textColor2', 'accentColor', 'asciiColor'].includes(field)) {
+          const themeSelect = document.getElementById('themePresetSelect');
+          if (themeSelect) themeSelect.value = 'custom';
+        }
+
+        if (field === 'tabIcon') applySharedFavicon(element.value);
+
+        // Auto-save: Immediate for non-text, debounced for text
+        if (element.type === 'range' || element.type === 'color' || element.type === 'checkbox' || element.tagName === 'SELECT') {
+          debouncedSave();
+        }
+      });
+
+      if (element.type === 'text') {
+        element.addEventListener('focus', function () { this.select(); });
+        element.addEventListener('input', debouncedSave);
+      }
     });
-  }
 
-  // Quote file picker
-  const pickQtBtn = document.getElementById('pickQuoteBtn');
-  if (pickQtBtn) {
-    pickQtBtn.addEventListener('click', () => {
-      document.getElementById('quoteFilePicker').click();
-    });
-  }
+    const blurSlider = document.getElementById('backgroundBlur');
+    if (blurSlider) blurSlider.addEventListener('input', () => updateSliderValue('backgroundBlur', 'blurValue'));
 
-  const qtFilePicker = document.getElementById('quoteFilePicker');
-  if (qtFilePicker) {
-    qtFilePicker.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+    const brightnessSlider = document.getElementById('backgroundBrightness');
+    if (brightnessSlider) brightnessSlider.addEventListener('input', () => updateSliderValue('backgroundBrightness', 'brightnessValue'));
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        // Store the raw text content directly
-        const textContent = e.target.result;
+    const opacSlider = document.getElementById('asciiOpacity');
+    if (opacSlider) opacSlider.addEventListener('input', () => updateSliderValue('asciiOpacity', 'opacityValue'));
 
-        if (textContent.length > 500000) {
-          showStatus('file too large (<500KB) ❌');
+    const speedSlider = document.getElementById('asciiSpeed');
+    if (speedSlider) speedSlider.addEventListener('input', () => updateSliderValue('asciiSpeed', 'speedValue'));
+
+    const sOpacitySlider = document.getElementById('searchOpacity');
+    if (sOpacitySlider) {
+      sOpacitySlider.addEventListener('input', () => {
+        updateSliderValue('searchOpacity', 'searchOpacityValue');
+        saveSettings();
+      });
+    }
+
+    const sBlurSlider = document.getElementById('searchBlur');
+    if (sBlurSlider) {
+      sBlurSlider.addEventListener('input', () => {
+        updateSliderValue('searchBlur', 'searchBlurValue');
+        saveSettings();
+      });
+    }
+
+    const fontSizeSlider = document.getElementById('baseFontSize');
+    if (fontSizeSlider) fontSizeSlider.addEventListener('input', () => updateSliderValue('baseFontSize', 'fontSizeDisplay'));
+
+    const applyFontBtn = document.getElementById('applyFontBtn');
+    const fontFamilyInput = document.getElementById('fontFamily');
+    if (applyFontBtn && fontFamilyInput) {
+      applyFontBtn.addEventListener('click', async () => {
+        const newFont = fontFamilyInput.value;
+        const data = await loadSharedData();
+        data.config.fontFamily = newFont;
+
+        // Save and Apply
+        await saveSharedData(STORAGE_KEYS.CONFIG, data.config);
+        applySharedTheme(data.config, 'index');
+
+        const status = document.getElementById('statusMsg');
+        if (status) {
+          status.textContent = 'font applied';
+          status.style.opacity = '1';
+          setTimeout(() => status.style.opacity = '0', 1500);
+        }
+      });
+    }
+
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) saveBtn.addEventListener('click', saveSettings);
+
+    const rtBtn = document.getElementById('resetBtn');
+    if (rtBtn) rtBtn.addEventListener('click', resetSettings);
+
+    // Image file picker
+    const pickImgBtn = document.getElementById('pickImageBtn');
+    if (pickImgBtn) {
+      pickImgBtn.addEventListener('click', () => {
+        document.getElementById('imageFilePicker').click();
+      });
+    }
+
+    const imgFilePicker = document.getElementById('imageFilePicker');
+    if (imgFilePicker) {
+      imgFilePicker.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 10485760) {
+          showStatus('file too large (<10MB) ❌');
           return;
         }
 
-        // Create hidden input for content
-        let hidden = document.getElementById('quoteFile');
-        if (!hidden) {
-          hidden = document.createElement('input');
-          hidden.type = 'hidden';
-          hidden.id = 'quoteFile';
-          document.body.appendChild(hidden);
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          document.getElementById('backgroundImage').value = evt.target.result;
+          const config = getConfigFromInputs();
+          applySharedTheme(config, 'index');
+          window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
+          showStatus('image loaded ✓');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Quote file picker
+    const pickQtBtn = document.getElementById('pickQuoteBtn');
+    if (pickQtBtn) {
+      pickQtBtn.addEventListener('click', () => {
+        document.getElementById('quoteFilePicker').click();
+      });
+    }
+
+    const qtFilePicker = document.getElementById('quoteFilePicker');
+    if (qtFilePicker) {
+      qtFilePicker.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          // Store the raw text content directly
+          const textContent = e.target.result;
+
+          if (textContent.length > 500000) {
+            showStatus('file too large (<500KB) ❌');
+            return;
+          }
+
+          // Create or find hidden input for content
+          let hidden = document.getElementById('quoteFile');
+          if (!hidden) {
+            hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.id = 'quoteFile';
+            document.body.appendChild(hidden);
+          }
+          hidden.value = textContent;
+
+          // Use existing visible input for filename display
+          const filenameDisplay = document.getElementById('quoteFileNameInput');
+          if (filenameDisplay) {
+            filenameDisplay.value = file.name;
+          }
+
+          document.getElementById('pickQuoteBtn').innerText = '✅ loaded';
+
+          // Auto-save to ensure it persists
+          saveSettings();
+        };
+        reader.readAsText(file); // Read as text, not DataURL
+      });
+    }
+
+    // Quote interval handler
+    const qtIntervalSelect = document.getElementById('quoteIntervalSelect');
+    if (qtIntervalSelect) {
+      qtIntervalSelect.addEventListener('change', (e) => {
+        const custom = document.getElementById('quoteIntervalCustom');
+        if (custom) {
+          if (e.target.value === 'custom') {
+            custom.style.display = 'block';
+            custom.focus();
+          } else {
+            custom.style.display = 'none';
+            saveSettings(true);
+          }
         }
-        hidden.value = textContent;
+      });
+    }
 
-        // Store filename for display
-        let hiddenName = document.getElementById('quoteFileNameInput');
-        if (!hiddenName) {
-          hiddenName = document.createElement('input');
-          hiddenName.type = 'hidden';
-          hiddenName.id = 'quoteFileNameInput'; // distinct ID
-          document.body.appendChild(hiddenName);
+    // Theme preset handler
+    const themeSelect = document.getElementById('themePresetSelect');
+    if (themeSelect) {
+      themeSelect.addEventListener('change', (e) => {
+        const theme = THEMES[e.target.value];
+        if (theme) {
+          Object.keys(theme).forEach(key => {
+            const el = document.getElementById(key);
+            if (el) el.value = theme[key];
+          });
+          const config = getConfigFromInputs();
+          applySharedTheme(config, 'index');
+          window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
         }
-        hiddenName.value = file.name;
+      });
+    }
 
-        document.getElementById('pickQuoteBtn').innerText = '✅ loaded';
-        document.getElementById('quoteFileName').textContent = file.name;
+    // Search engine handler
+    const engineSelect = document.getElementById('searchEngineSelect');
+    if (engineSelect) {
+      engineSelect.addEventListener('change', (e) => {
+        const customRow = document.getElementById('customEngineRow');
+        const input = document.getElementById('searchEngine');
+        if (customRow && input) {
+          if (e.target.value === 'custom') {
+            customRow.style.display = 'flex';
+            input.focus();
+          } else {
+            customRow.style.display = 'none';
+            input.value = e.target.value;
+          }
+          // Apply theme immediately to update engine logic in shared state
+          const config = getConfigFromInputs();
+          applySharedTheme(config, 'index');
+          window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
+          saveSettings(true);
+        }
+      });
+    }
 
-        // Auto-save to ensure it persists
+    // Clear Image Handler
+    const clrImgBtn = document.getElementById('clearImageBtn');
+    if (clrImgBtn) {
+      clrImgBtn.addEventListener('click', () => {
+        document.getElementById('backgroundImage').value = '';
+        const preview = document.getElementById('imgPreview');
+        if (preview) preview.src = '';
         saveSettings();
-      };
-      reader.readAsText(file); // Read as text, not DataURL
-    });
-  }
+      });
+    }
 
-  // Quote interval handler
-  const qtIntervalSelect = document.getElementById('quoteIntervalSelect');
-  if (qtIntervalSelect) {
-    qtIntervalSelect.addEventListener('change', (e) => {
-      const custom = document.getElementById('quoteIntervalCustom');
-      if (custom) {
-        if (e.target.value === 'custom') {
-          custom.style.display = 'block';
-          custom.focus();
-        } else {
-          custom.style.display = 'none';
-        }
-      }
-    });
-  }
+    // Clear Quote Handler
+    const clrQtBtn = document.getElementById('clearQuoteBtn');
+    if (clrQtBtn) {
+      clrQtBtn.addEventListener('click', () => {
+        const qInput = document.getElementById('quoteFileNameInput');
+        if (qInput) qInput.value = '';
 
-  // Theme preset handler
-  const themeSelect = document.getElementById('themePresetSelect');
-  if (themeSelect) {
-    themeSelect.addEventListener('change', (e) => {
-      const theme = THEMES[e.target.value];
-      if (theme) {
-        Object.keys(theme).forEach(key => {
-          const el = document.getElementById(key);
-          if (el) el.value = theme[key];
-        });
-        const config = getConfigFromInputs();
-        applySharedTheme(config, 'index');
-        window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
-      }
-    });
-  }
+        const qFile = document.getElementById('quoteFile');
+        if (qFile) qFile.value = '';
 
-  // Search engine handler
-  const engineSelect = document.getElementById('searchEngineSelect');
-  if (engineSelect) {
-    engineSelect.addEventListener('change', (e) => {
-      const customRow = document.getElementById('customEngineRow');
-      const input = document.getElementById('searchEngine');
-      if (customRow && input) {
-        if (e.target.value === 'custom') {
-          customRow.style.display = 'flex';
-          input.focus();
-        } else {
-          customRow.style.display = 'none';
-          input.value = e.target.value;
-        }
-        // Apply theme immediately to update engine logic in shared state
-        const config = getConfigFromInputs();
-        applySharedTheme(config, 'index');
-        window.dispatchEvent(new CustomEvent('configUpdated', { detail: config }));
-      }
-    });
-  }
+        saveSettings();
+      });
+    }
 
-  // Clear Image Handler
-  const clrImgBtn = document.getElementById('clearImageBtn');
-  if (clrImgBtn) {
-    clrImgBtn.addEventListener('click', () => {
-      document.getElementById('backgroundImage').value = '';
-      const preview = document.getElementById('imgPreview');
-      if (preview) preview.src = '';
-      saveSettings();
-    });
-  }
-
-  // Clear Quote Handler
-  const clrQtBtn = document.getElementById('clearQuoteBtn');
-  if (clrQtBtn) {
-    clrQtBtn.addEventListener('click', () => {
-      const qInput = document.getElementById('quoteFileNameInput');
-      if (qInput) qInput.value = '';
-
-      const qFile = document.getElementById('quoteFile');
-      if (qFile) qFile.value = '';
-
-      const qName = document.getElementById('quoteFileName');
-      if (qName) qName.textContent = ''; // Clear legacy span if exists
-      saveSettings();
-    });
-  }
-
-  loadSettings();
-});
+    loadSettings();
+  });
+})();

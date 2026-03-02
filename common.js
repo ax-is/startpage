@@ -3,6 +3,7 @@ const STORAGE_KEYS = {
   BOOKMARKS: 'startpageBookmarks'
 };
 
+// ICON_BRAND_COLORS is used globally by script.js — common.js must be loaded first.
 const ICON_BRAND_COLORS = {
   github: '#ffffff',
   youtube: '#FF0000',
@@ -68,96 +69,102 @@ const DEFAULT_CONFIG = {
   searchOpacity: 0,
   searchBlur: 0
 };
+// Freeze to prevent accidental mutation across scripts.
+Object.freeze(DEFAULT_CONFIG);
 
-const DEFAULT_BOOKMARKS = [
+const DEFAULT_BOOKMARKS = Object.freeze([
   { "name": "GitHub", "url": "https://github.com", "tags": ["dev", "code"] },
   { "name": "Google", "url": "https://google.com", "tags": ["search"] },
   { "name": "YouTube", "url": "https://youtube.com", "tags": ["video", "entertainment"] },
   { "name": "Reddit", "url": "https://reddit.com", "tags": ["social"] }
-];
+]);
 
-async function loadSharedData() {
-  let config = { ...DEFAULT_CONFIG };
-  let bookmarks = [...DEFAULT_BOOKMARKS];
 
+// Loads fallback config/bookmarks from data.json for any keys not yet found in storage.
+async function loadDefaultsFromFile(config, bookmarks, hasConfig, hasBookmarks) {
+  try {
+    const response = await fetch('data.json');
+    if (!response.ok) return { config, bookmarks };
+    const data = await response.json();
+    if (data.config && !hasConfig) config = { ...config, ...data.config };
+    if (data.bookmarks && !hasBookmarks) bookmarks = data.bookmarks;
+  } catch (err) {
+    console.error('Failed to load data.json:', err);
+  }
+  return { config, bookmarks };
+}
+
+// Reads config and bookmarks from localStorage, filling gaps from data.json.
+async function loadFromLocalStorage(config, bookmarks) {
+  const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
+  const savedBookmarks = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+  let hasConfig = false;
+  let hasBookmarks = false;
+
+  if (savedConfig) {
+    try { config = { ...config, ...JSON.parse(savedConfig) }; hasConfig = true; } catch (e) { }
+  }
+  if (savedBookmarks) {
+    try { bookmarks = JSON.parse(savedBookmarks); hasBookmarks = true; } catch (e) { }
+  }
+
+  if (!hasConfig || !hasBookmarks) {
+    ({ config, bookmarks } = await loadDefaultsFromFile(config, bookmarks, hasConfig, hasBookmarks));
+  }
+  return { config, bookmarks };
+}
+
+// Reads from chrome.storage.local (extension context), falling back to localStorage for any gaps.
+function loadFromChromeStorage(config, bookmarks) {
   return new Promise((resolve) => {
-    // Check if running as an extension
-    if (typeof window.chrome !== 'undefined' && window.chrome.storage && window.chrome.storage.local) {
-      try {
-        window.chrome.storage.local.get([STORAGE_KEYS.CONFIG, STORAGE_KEYS.BOOKMARKS], async (result) => {
-          if (window.chrome.runtime.lastError) {
-            console.warn("Chrome storage get failed:", window.chrome.runtime.lastError);
-            return fallbackLoad(resolve);
-          }
-
-          let foundConfig = false;
-          let foundBookmarks = false;
-
-          if (result[STORAGE_KEYS.CONFIG]) {
-            try { config = { ...config, ...result[STORAGE_KEYS.CONFIG] }; foundConfig = true; } catch (e) { }
-          }
-          if (result[STORAGE_KEYS.BOOKMARKS]) {
-            try { bookmarks = result[STORAGE_KEYS.BOOKMARKS]; foundBookmarks = true; } catch (e) { }
-          }
-
-          if (!foundConfig || !foundBookmarks) {
-            // If chrome storage is missing data, check localStorage first
-            const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
-            const savedBookmarks = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
-
-            if (!foundConfig && savedConfig) {
-              try { config = { ...config, ...JSON.parse(savedConfig) }; } catch (e) { }
-            }
-            if (!foundBookmarks && savedBookmarks) {
-              try { bookmarks = JSON.parse(savedBookmarks); } catch (e) { }
-            }
-
-            if (!savedConfig || !savedBookmarks) {
-              await loadDefaults(foundConfig || !!savedConfig, foundBookmarks || !!savedBookmarks);
-            }
-          }
-          resolve({ config, bookmarks });
-        });
-      } catch (e) {
-        console.warn("Chrome storage API error during get:", e);
-        fallbackLoad(resolve);
-      }
-    } else {
-      fallbackLoad(resolve);
-    }
-
-    function fallbackLoad(resolveFunc) {
-      // Fallback for regular web page or when chrome.storage fails
-      const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
-      const savedBookmarks = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
-
-      if (savedConfig) {
-        try { config = { ...config, ...JSON.parse(savedConfig) }; } catch (e) { }
-      }
-      if (savedBookmarks) {
-        try { bookmarks = JSON.parse(savedBookmarks); } catch (e) { }
-      }
-
-      if (!savedConfig || !savedBookmarks) {
-        loadDefaults(!!savedConfig, !!savedBookmarks).then(() => resolveFunc({ config, bookmarks }));
-      } else {
-        resolveFunc({ config, bookmarks });
-      }
-    }
-
-    async function loadDefaults(hasConfig, hasBookmarks) {
-      try {
-        const response = await fetch('data.json');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.config && !hasConfig) config = { ...config, ...data.config };
-          if (data.bookmarks && !hasBookmarks) bookmarks = data.bookmarks;
+    try {
+      window.chrome.storage.local.get([STORAGE_KEYS.CONFIG, STORAGE_KEYS.BOOKMARKS], async (result) => {
+        if (window.chrome.runtime.lastError) {
+          console.warn('Chrome storage get failed:', window.chrome.runtime.lastError);
+          return resolve(loadFromLocalStorage(config, bookmarks));
         }
-      } catch (error) {
-        console.error('Failed to load data.json:', error);
-      }
+
+        let hasConfig = false;
+        let hasBookmarks = false;
+
+        if (result[STORAGE_KEYS.CONFIG]) {
+          try { config = { ...config, ...result[STORAGE_KEYS.CONFIG] }; hasConfig = true; } catch (e) { }
+        }
+        if (result[STORAGE_KEYS.BOOKMARKS]) {
+          try { bookmarks = result[STORAGE_KEYS.BOOKMARKS]; hasBookmarks = true; } catch (e) { }
+        }
+
+        // Fill any gaps from localStorage then data.json
+        if (!hasConfig || !hasBookmarks) {
+          const lsConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
+          const lsBookmarks = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+          if (!hasConfig && lsConfig) {
+            try { config = { ...config, ...JSON.parse(lsConfig) }; hasConfig = true; } catch (e) { }
+          }
+          if (!hasBookmarks && lsBookmarks) {
+            try { bookmarks = JSON.parse(lsBookmarks); hasBookmarks = true; } catch (e) { }
+          }
+          if (!hasConfig || !hasBookmarks) {
+            ({ config, bookmarks } = await loadDefaultsFromFile(config, bookmarks, hasConfig, hasBookmarks));
+          }
+        }
+        resolve({ config, bookmarks });
+      });
+    } catch (e) {
+      console.warn('Chrome storage API error:', e);
+      resolve(loadFromLocalStorage(config, bookmarks));
     }
   });
+}
+
+async function loadSharedData() {
+  const config = { ...DEFAULT_CONFIG };
+  const bookmarks = [...DEFAULT_BOOKMARKS];
+
+  if (typeof window.chrome !== 'undefined' && window.chrome.storage?.local) {
+    return loadFromChromeStorage(config, bookmarks);
+  }
+  return loadFromLocalStorage(config, bookmarks);
 }
 
 function saveSharedData(key, data) {
@@ -204,6 +211,28 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function sanitizeFontFamily(font) {
+  if (!font) return "";
+  let clean = font.trim();
+
+  // If there's an odd number of single quotes, it's unclosed.
+  const quoteCount = (clean.match(/'/g) || []).length;
+  if (quoteCount % 2 !== 0) {
+    // If it ends with a quote, remove it. Otherwise, close it.
+    if (clean.endsWith("'")) clean = clean.slice(0, -1);
+    else clean += "'";
+  }
+
+  // If the font has spaces but isn't already quoted, quote it.
+  // Note: This is a simple check; it won't handle comma-separated stacks perfectly, 
+  // but for the "font change" input it's much safer.
+  if (clean.includes(" ") && !clean.startsWith("'") && !clean.includes(",")) {
+    clean = `'${clean}'`;
+  }
+
+  return clean;
+}
+
 function applySharedTheme(config, pageType) {
   const root = document.documentElement;
   root.style.setProperty('--color-bg', config.backgroundColor);
@@ -211,8 +240,8 @@ function applySharedTheme(config, pageType) {
   root.style.setProperty('--color-accent', config.accentColor);
 
   // Apply typography variables if present
-  const fontValue = config.fontFamily && config.fontFamily.trim() !== ''
-    ? config.fontFamily
+  let fontValue = config.fontFamily && config.fontFamily.trim() !== ''
+    ? sanitizeFontFamily(config.fontFamily)
     : DEFAULT_CONFIG.fontFamily;
 
   // Use a fallback stack in the variable itself so mid-typing (invalid fonts) doesn't break the UI
@@ -329,24 +358,8 @@ function applySharedTheme(config, pageType) {
         }
         ::placeholder { text-shadow: none; }
       `;
-    } else if (pageType === 'bookmarks') {
-      const maskOpacity = (config.maskOpacity || 60) / 100;
-      if (maskOpacity > 0) {
-        if (!bgMaskEl) {
-          bgMaskEl = document.createElement('div');
-          bgMaskEl.id = 'background-mask';
-          document.body.appendChild(bgMaskEl);
-        }
-        Object.assign(bgMaskEl.style, {
-          position: 'fixed', top: '0', left: '0',
-          width: '100%', height: '100%',
-          backgroundColor: config.maskColor || '#000000',
-          opacity: maskOpacity.toString(),
-          zIndex: '-1', pointerEvents: 'none'
-        });
-      } else if (bgMaskEl) {
-        bgMaskEl.remove();
-      }
+      // Note: bookmarks page applies its own background mask — see bookmarks.js applyBookmarksMask()
+      // Other page types (e.g. bookmarks) keep the background but skip the index-only overlay/mask.
     }
   } else {
     document.body.style.backgroundImage = 'none';

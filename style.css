@@ -203,9 +203,8 @@ body {
   margin-top: 40px;
   text-align: center;
   min-height: 24px;
-  /* padding-bottom: 30px; */
-  /* Removed padding, using absolute positioning below */
 }
+
 
 #quote {
   font-size: 0.9rem;
@@ -306,14 +305,50 @@ body {
 
 .dock-icon {
   color: var(--color-fg);
-  opacity: 0.4;
+  opacity: 0;
   text-decoration: none;
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  /* Bouncy hover */
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: dockFadeIn 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.dock-icon:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.dock-icon:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.dock-icon:nth-child(3) {
+  animation-delay: 0.19s;
+}
+
+.dock-icon:nth-child(4) {
+  animation-delay: 0.26s;
+}
+
+.dock-icon:nth-child(5) {
+  animation-delay: 0.33s;
+}
+
+.dock-icon:nth-child(6) {
+  animation-delay: 0.40s;
+}
+
+@keyframes dockFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
 }
 
 .dock-icon img {
@@ -642,11 +677,17 @@ body.icon-theme-cyber-organic .dock-icon img {
   opacity: 1;
 }
 
-.bookmark-url {
+.bookmark-item .bookmark-url {
   font-family: var(--font-main);
   font-size: 0.75rem;
   color: var(--color-muted);
   font-weight: 300;
+}
+
+/* Edit page inputs share the class name — keep them full brightness */
+.bookmark-edit-item .bookmark-url,
+.bookmark-edit-item .bookmark-tags {
+  color: var(--color-fg);
 }
 
 .bookmark-tags {
