@@ -62,21 +62,22 @@ const DEFAULT_CONFIG = {
   iconTheme: 'accent-glow',
   fontFamily: "'JetBrains Mono', monospace",
   baseFontSize: 14,
-  searchPlaceholder: null,
+  searchPlaceholder: 'search or type : for commands',
   showQuotes: true,
   showClock: true,
   backgroundBrightness: 100,
   searchOpacity: 0,
-  searchBlur: 0
+  searchBlur: 0,
+  animatedPlaceholder: true
 };
 // Freeze to prevent accidental mutation across scripts.
 Object.freeze(DEFAULT_CONFIG);
 
 const DEFAULT_BOOKMARKS = Object.freeze([
-  { "name": "GitHub", "url": "https://github.com", "tags": ["dev", "code"] },
-  { "name": "Google", "url": "https://google.com", "tags": ["search"] },
-  { "name": "YouTube", "url": "https://youtube.com", "tags": ["video", "entertainment"] },
-  { "name": "Reddit", "url": "https://reddit.com", "tags": ["social"] }
+  { "name": "GitHub", "url": "https://github.com", "tags": ["git"] },
+  { "name": "Google", "url": "https://google.com", "tags": ["google"] },
+  { "name": "YouTube", "url": "https://youtube.com", "tags": ["yt"] },
+  { "name": "Reddit", "url": "https://reddit.com", "tags": ["r"] }
 ]);
 
 
@@ -267,7 +268,7 @@ function applySharedTheme(config, pageType) {
   if (sInput) {
     const placeholderValue = (config.searchPlaceholder !== undefined && config.searchPlaceholder !== null)
       ? config.searchPlaceholder
-      : 'search or type : for commands';
+      : '';
     sInput.placeholder = placeholderValue;
   }
 

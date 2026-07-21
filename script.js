@@ -861,7 +861,13 @@ function updateSmoothCaret() {
 
   // Center-aligned: offset from middle
   const inputCenter = inputRect.width / 2;
-  const caretX = inputCenter - (fullWidth / 2) + textWidth + paddingLeft - 2;
+  let caretX;
+  if (text.length === 0 && !searchInput.placeholder) {
+    // No text and no placeholder (e.g. animated placeholder not started yet) — center the caret
+    caretX = inputCenter;
+  } else {
+    caretX = inputCenter - (fullWidth / 2) + textWidth + paddingLeft - 2;
+  }
 
   // Position relative to search-area
   const offsetLeft = inputRect.left - areaRect.left;
@@ -1017,6 +1023,85 @@ async function init() {
   };
 
   setTimeout(focusSearch, 100);
+
+  // Start placeholder typing animation
+  animatePlaceholder();
+}
+
+/* ---------- Placeholder Typing Animation ---------- */
+
+let placeholderAnimationId = null;
+
+function animatePlaceholder() {
+  const input = document.getElementById('search-input');
+  if (!input) return;
+
+  // Stop any existing animation
+  if (placeholderAnimationId) {
+    clearTimeout(placeholderAnimationId);
+    placeholderAnimationId = null;
+  }
+
+  // If disabled, set static placeholder and return
+  if (config.animatedPlaceholder === false) {
+    const staticText = (config.searchPlaceholder !== undefined && config.searchPlaceholder !== null && config.searchPlaceholder !== '')
+      ? config.searchPlaceholder
+      : 'search or type : for commands';
+    input.placeholder = staticText;
+    return;
+  }
+
+  const phrases = ['search', 'type : for commands'];
+  let phraseIndex = 0;
+  let charIndex = 0;
+  let isDeleting = false;
+  let isPaused = false;
+
+  // Clear the static placeholder
+  input.placeholder = '';
+
+  function tick() {
+    // Stop animation if user is typing
+    if (input.value.length > 0) {
+      input.placeholder = '';
+      placeholderAnimationId = setTimeout(tick, 300);
+      return;
+    }
+
+    const currentPhrase = phrases[phraseIndex];
+
+    if (isPaused) {
+      isPaused = false;
+      isDeleting = true;
+      placeholderAnimationId = setTimeout(tick, 50);
+      return;
+    }
+
+    if (!isDeleting) {
+      charIndex++;
+      input.placeholder = currentPhrase.substring(0, charIndex);
+
+      if (charIndex === currentPhrase.length) {
+        isPaused = true;
+        placeholderAnimationId = setTimeout(tick, 2000);
+        return;
+      }
+      placeholderAnimationId = setTimeout(tick, 60);
+    } else {
+      charIndex--;
+      input.placeholder = currentPhrase.substring(0, charIndex);
+
+      if (charIndex === 0) {
+        isDeleting = false;
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        placeholderAnimationId = setTimeout(tick, 300);
+        return;
+      }
+      placeholderAnimationId = setTimeout(tick, 30);
+    }
+  }
+
+  tick();
 }
 
 init();
@@ -1037,6 +1122,7 @@ window.addEventListener('configUpdated', (e) => {
   config = e.detail;
   applyConfig();
   renderIconDock();
+  animatePlaceholder();
 });
 
 // Refresh icon dock when returning from bookmarks.html via back button (bfcache)

@@ -166,11 +166,11 @@ body {
   top: 50%;
   transform: translateY(-50%);
   box-shadow: 0 0 6px var(--color-accent);
-  animation: caretBlink 1s ease infinite;
 }
 
 .smooth-caret.visible {
   opacity: 1;
+  animation: caretBlink 1s ease infinite;
 }
 
 @keyframes caretBlink {

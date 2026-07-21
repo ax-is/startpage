@@ -17,27 +17,6 @@
       accentColor: '#fabd2f',
       asciiColor: '#fabd2f'
     },
-    nord: {
-      backgroundColor: '#2e3440',
-      textColor: '#d8dee9',
-      textColor2: '#949fb1',
-      accentColor: '#88c0d0',
-      asciiColor: '#88c0d0'
-    },
-    dracula: {
-      backgroundColor: '#282a36',
-      textColor: '#f8f8f2',
-      textColor2: '#6272a4',
-      accentColor: '#bd93f9',
-      asciiColor: '#bd93f9'
-    },
-    tokyonight: {
-      backgroundColor: '#1a1b26',
-      textColor: '#c0caf5',
-      textColor2: '#7982a9',
-      accentColor: '#7aa2f7',
-      asciiColor: '#7aa2f7'
-    },
     orbit: {
       backgroundColor: '#0a0e1a',
       textColor: '#e0e0e0',
