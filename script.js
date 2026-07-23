@@ -607,15 +607,16 @@ function renderIconDock() {
   if (!iconDock) return;
   iconDock.innerHTML = '';
 
-  // Create icons for the first 6 bookmarks
-  const topBookmarks = bookmarks.slice(0, 6);
+  // Create icons for bookmarks (up to a reasonable limit, e.g. 12, or all)
+  const topBookmarks = bookmarks;
   if (topBookmarks.length === 0) return;
 
-  topBookmarks.forEach(bm => {
+  topBookmarks.forEach((bm, i) => {
     const link = document.createElement('a');
     link.className = 'dock-icon';
     link.href = ensureAbsoluteUrl(bm.url);
     link.title = bm.name;
+    link.style.animationDelay = `${(i * 0.07) + 0.05}s`;
 
     const slug = getIconSlugForUrl(bm.url);
     const brandColor = ICON_BRAND_COLORS[slug];
