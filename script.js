@@ -9,6 +9,7 @@ let selectedIndex = 0;
 let currentCommandSuggestions = [];
 let currentSearchSuggestions = [];
 let showingAllBookmarks = false;
+let isNavigatingSuggestions = false;
 
 const searchInput = document.getElementById('search-input');
 const resultsContainer = document.getElementById('results');
@@ -754,6 +755,7 @@ function toggleHelp() {
     [':reset', 'Reset everything'],
     [':help', 'Toggle this help'],
     ['↓ / ↑', 'Navigate results'],
+    ['→', 'Complete suggestion'],
     ['Enter', 'Open / Search'],
     ['Esc', 'Clear / Close']
   ];
@@ -801,6 +803,8 @@ function moveSelection(dir) {
   const next = selectedIndex + delta;
   if (next < 0 || next >= items.length) return;
 
+  isNavigatingSuggestions = true;
+
   // Swap selected class without re-rendering
   const domItems = resultsContainer.querySelectorAll('.bookmark-item');
   if (domItems[selectedIndex]) domItems[selectedIndex].classList.remove('selected');
@@ -812,6 +816,7 @@ function moveSelection(dir) {
 /* ---------- Event Listeners ---------- */
 
 searchInput.addEventListener('input', (e) => {
+  isNavigatingSuggestions = false;
   filterBookmarks(e.target.value);
   updateSmoothCaret();
 });
@@ -822,6 +827,7 @@ searchInput.addEventListener('blur', () => {
 });
 searchInput.addEventListener('click', () => updateSmoothCaret());
 searchInput.addEventListener('keyup', () => updateSmoothCaret());
+searchInput.addEventListener('scroll', () => updateSmoothCaret());
 resultsContainer.addEventListener('scroll', updateScrollFade);
 
 /* ---------- Smooth Caret ---------- */
@@ -859,16 +865,29 @@ function updateSmoothCaret() {
   const inputRect = searchInput.getBoundingClientRect();
   const areaRect = searchInput.parentElement.getBoundingClientRect();
   const paddingLeft = parseFloat(style.paddingLeft) || 0;
+  const paddingRight = parseFloat(style.paddingRight) || 0;
+  const caretWidth = caret.offsetWidth || 2;
+  const availableWidth = inputRect.width - paddingLeft - paddingRight;
+
+  const minX = paddingLeft;
+  const maxX = Math.max(minX, inputRect.width - paddingRight - caretWidth);
 
   // Center-aligned: offset from middle
   const inputCenter = inputRect.width / 2;
   let caretX;
+
   if (text.length === 0 && !searchInput.placeholder) {
     // No text and no placeholder (e.g. animated placeholder not started yet) — center the caret
-    caretX = inputCenter;
-  } else {
+    caretX = inputCenter - (caretWidth / 2);
+  } else if (fullWidth <= availableWidth) {
     caretX = inputCenter - (fullWidth / 2) + textWidth + paddingLeft - 2;
+  } else {
+    // When text overflows, browser anchors text to the left with horizontal scroll
+    caretX = paddingLeft + textWidth - searchInput.scrollLeft;
   }
+
+  // Constrain caret within visible input bounds so it never moves outside the search bar
+  caretX = Math.max(minX, Math.min(maxX, caretX));
 
   // Position relative to search-area
   const offsetLeft = inputRect.left - areaRect.left;
@@ -889,6 +908,29 @@ document.addEventListener('keydown', (e) => {
   if (focused) {
     if (e.key === 'ArrowDown' && noMod) { e.preventDefault(); moveSelection('down'); }
     else if (e.key === 'ArrowUp' && noMod) { e.preventDefault(); moveSelection('up'); }
+    else if (e.key === 'ArrowRight' && noMod) {
+      if (currentSearchSuggestions.length > 0 && resultsBox.style.display !== 'none' && currentSearchSuggestions[selectedIndex]) {
+        if (searchInput.selectionStart === searchInput.value.length || isNavigatingSuggestions || selectedIndex > 0) {
+          e.preventDefault();
+          const sug = currentSearchSuggestions[selectedIndex];
+          searchInput.value = sug;
+          searchInput.setSelectionRange(sug.length, sug.length);
+          isNavigatingSuggestions = false;
+          filterBookmarks(sug);
+          updateSmoothCaret();
+        }
+      } else if (currentCommandSuggestions.length > 0 && resultsBox.style.display !== 'none' && currentCommandSuggestions[selectedIndex]) {
+        if (searchInput.selectionStart === searchInput.value.length || isNavigatingSuggestions || selectedIndex > 0) {
+          e.preventDefault();
+          const cmd = currentCommandSuggestions[selectedIndex];
+          searchInput.value = cmd.name;
+          searchInput.setSelectionRange(cmd.name.length, cmd.name.length);
+          isNavigatingSuggestions = false;
+          filterBookmarks(cmd.name);
+          updateSmoothCaret();
+        }
+      }
+    }
     else if (e.key === 'Enter') { e.preventDefault(); handleEnterKey(); }
     else if (e.key === 'Escape') { e.preventDefault(); handleEscapeKey(); }
   }
