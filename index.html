@@ -9,7 +9,7 @@
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%234a9eff'/></svg>">
   <script src="icons.js"></script>
   <script src="theme-init.js"></script>
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
   <script src="focus.js"></script>
 </head>
 
@@ -149,6 +149,14 @@
         <div class="section-title">typography</div>
         <div class="row">
           <label>font family</label>
+          <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
+            <select id="fontFamilySelect" style="flex: 1;" title="Choose font family">
+              <option value="'JetBrains Mono', monospace">JetBrains Mono (default)</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" id="customFontRow" style="display: none;">
+          <label>custom font</label>
           <div style="flex: 1; display: flex; gap: 8px; align-items: center;">
             <input type="text" id="fontFamily" placeholder="'JetBrains Mono', Arial" style="flex: 1;">
             <button type="button" class="pick-btn" id="applyFontBtn" title="Apply Font Changes">✓</button>
@@ -299,7 +307,7 @@
   <script src="quotes.js?v=1"></script>
   <script src="animations.js?v=1"></script>
   <script src="script.js?v=4"></script>
-  <script src="config.js?v=2"></script>
+  <script src="config.js?v=4"></script>
 </body>
 
 </html>

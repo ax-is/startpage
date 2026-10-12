@@ -12,6 +12,7 @@
 }
 
 :root {
+  color-scheme: dark;
   --color-bg: #0a0e1a;
   --color-fg: #e0e0e0;
   --color-accent: #4a9eff;
@@ -873,6 +874,22 @@ select {
   font-size: 0.9rem;
   border-radius: 4px;
   transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+}
+
+select option:disabled {
+  background-color: var(--color-bg);
+  color: var(--color-accent);
+  font-weight: 600;
+  opacity: 0.85;
 }
 
 input[type="text"]:focus,
